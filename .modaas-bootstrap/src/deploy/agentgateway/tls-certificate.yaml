@@ -1,0 +1,77 @@
+# W4-A (sprint-2026-09-ga-hardening.md) — requirement #42: TLS on the
+# agentgateway perimeter, pre-hackathon.
+#
+# cert-manager Certificate for the agentgateway `modaas-agw` Gateway's
+# public-facing listener (llm-tls :8443, see gateway-modaas-agw.yaml). This
+# is the DATAPLANE the perimeter serves partner traffic on — NOT the
+# retired ai-gateway/istio-system certificate (see
+# deploy/helm/modaas/templates/gateway/certificate.yaml, which is Helm-
+# gated on aiGateway.enabled and targets a different namespace/host; that
+# template is legacy scaffolding for the retired dataplane per
+# DATAPLANE-DIRECTION.md §9 and AGENTS.md's "ai-gateway.canvas-system is a
+# regression" rule — do not confuse the two).
+#
+# Issuer: `canvas-cert-manager-init-selfsigned-cluster` — a ClusterIssuer
+# name supplied by the sprint coordinator as a live-cluster-verified fact
+# (`kubectl get clusterissuer` was NOT available in this lane's sandbox;
+# this file trusts that name as given and has not been independently
+# verified against the live cluster by this lane — flag this at merge/
+# apply time, per requirement #42's own gate: coordinator confirmed
+# canvas-cert-manager is running, this lane could not re-derive the exact
+# issuer name).
+#
+# EXPOSURE, 2026-09-26 (lane P). The comment below calls the host "externally
+# reachable". That is now a DECISION rather than a description of an accident:
+# the owner confirmed the perimeter is public by design (2026-09-26, "we would
+# need global endpoints to be available and control will be through authz"), and
+# a scheme annotation making the ELB internal was drafted and deliberately not
+# taken. a design note "Exposure" is the record.
+#
+# That makes this certificate load-bearing rather than cosmetic, and it makes the
+# gap it does not close worth naming here: `llm-tls` :8443 is the only listener
+# this cert serves. `http` :8080 and `llm` :8081 are PLAINTEXT on the same public
+# load balancer, so the API key that authenticates a caller travels in the clear
+# on the two listeners most traffic uses today. Not fixed here — the R-42 cutover
+# is owner-gated, and Coherence Rule 17 forbids publishing a scheme a listener
+# does not serve; its mirror is that plaintext must not stay on a public
+# perimeter. The two end-state options and what each costs are in a design note
+# "Exposure".
+#
+# dnsNames:
+#   - <PERIMETER-HOST> is a placeholder for the agentgateway Gateway's
+#     public ELB/NLB hostname (populated by the
+#     agentgateway controller's own LoadBalancer Service once it
+#     provisions — see operators/shared/dependent_api.py's
+#     _resolve_istio_lb_dns / MODAAS_PUBLIC_GATEWAY_HOST for how the
+#     operator layer discovers this same hostname at runtime). The
+#     maintainer applying this manifest live MUST substitute the real
+#     ELB hostname before `kubectl apply` — this is NOT resolved by any
+#     templating in this file. Requirement #42 must-not-haves: never
+#     publish https:// (or, by extension, request a cert for a host)
+#     before the corresponding listener is verified live.
+#   - the in-cluster Service DNS name is included unconditionally so the
+#     same cert also satisfies any future in-mesh caller that reaches the
+#     Gateway's Service directly over TLS.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: agw-perimeter-tls
+  namespace: agentgateway-system
+  labels:
+    app.kubernetes.io/name: modaas-agw
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/managed-by: modaas
+spec:
+  secretName: agw-perimeter-tls
+  issuerRef:
+    name: canvas-cert-manager-init-selfsigned-cluster
+    kind: ClusterIssuer
+    group: cert-manager.io
+  dnsNames:
+    # Maintainer-substituted before apply — see comment block above.
+    - "<PERIMETER-HOST>"
+    - "modaas-agw.agentgateway-system.svc.cluster.local"
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always

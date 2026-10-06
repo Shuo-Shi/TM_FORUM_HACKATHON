@@ -1,0 +1,42 @@
+# a design note Mechanism 2 — the ONE place the AWS SDK version is written down.
+#
+# Referenced by every deployed MoDaaS component's requirements.txt as
+#   -c constraints/aws-sdk.txt
+# and copied into each operator's build context by its build-and-push.sh (the
+# same refresh mechanism shared_build/shared uses, guarded the same way by
+# operators/shared/tests/test_sdk_pin_discipline.py).
+#
+# WHY EXACT PINS. Before this file, every operator declared a FLOOR
+# (`boto3>=1.42.93`) and the Dockerfile ran `pip install -r requirements.txt`
+# with no lock. The version in a running pod was therefore "whatever was latest
+# on PyPI the day CodeBuild ran" — not recorded anywhere, not reproducible, and
+# different from the 1.42.93 in the test venv. That gap is not theoretical:
+#
+#   * botocore 1.43.66 introduced the preview `agent-registry-control` service;
+#     1.43.84 made it GA ("AWS Agent Registry becomes Generally Available" —
+#     botocore .changes/1.43.84.json names both `agent-registry` and
+#     `agent-registry-control`); 1.43.85 added the HTTP and AG-UI descriptor
+#     kinds. An operator image and a test venv straddling those releases agree
+#     on the code and disagree on the API.
+#   * `docs/analysis/Operator-GA-Drift-Evaluation-2026-09-01.md` compared
+#     1.42.93 to 1.43.86 and concluded "zero breaking drift" — correct for the
+#     services it diffed, and blind to the one that had moved, because nothing
+#     recorded which version the pods were actually running.
+#
+# HOW TO CHANGE A PIN. Run the drift sensor against the candidate version
+# first, read its report, then bump both lines together:
+#
+#   python3 tools/aws_api_drift.py --pinned 1.43.103 --candidate <new> \
+#       --format markdown
+#
+# A non-zero exit means a shape MoDaaS calls changed or a successor service
+# appeared; neither is a reason not to upgrade, but both are a reason to read
+# the report before you do. Bumping these lines requires owner authorization
+# like any other codebase change (AGENTS.md ownership clause).
+#
+# WHY THIS VALUE. 1.43.103 is what `pip install boto3` resolves to as of
+# 2026-09-26 and therefore what an image built from the unpinned Dockerfile was
+# already getting. Pinning it changes nothing about what runs today; it records
+# it, which is the whole point.
+boto3==1.43.103
+botocore==1.43.103

@@ -1,0 +1,41 @@
+AUDIT TRAIL -- 13 records
+================================================================
+ 1. [2026-10-05T21:45:10Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791236708-1401f9
+    trace_id=a408138490bd47fea9d06cb192e628e5 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T21:45:18Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791236708-1401f9
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791236708-1401f9 trace_id=a408138490bd47fea9d06cb192e628e5 result_summary=Based on the provided context, I can see the fault
+ 3. [2026-10-05T21:45:18Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791236708-1401f9
+    trace_id=a408138490bd47fea9d06cb192e628e5 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 4. [2026-10-05T21:45:18Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791236708-1401f9
+    disposition=auto-resolve, decision="Based on the provided context, I can see the fault details directly. Here's the summary:\n\n- **Impacted customers**: CUST-1001 Meridian Logistics (gold) and CUST-2
+ 5. [2026-10-05T21:45:20Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236708-1401f9
+    trace_id=f65d670b5b2f462b835178c649909eee it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T21:45:33Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236708-1401f9
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236708-1401f9 trace_id=f65d670b5b2f462b835178c649909eee result_summary=- **Incident disposition**: Auto-resolve (decision based o
+ 7. [2026-10-05T21:45:33Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236708-1401f9
+    trace_id=f65d670b5b2f462b835178c649909eee governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 8. [2026-10-05T21:45:33Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236708-1401f9
+    disposition=auto-resolve, decision='- **Incident disposition**: Auto-resolve (decision based on direct fault analysis)  \n- **Action per runbook**: No specific runbook action required (evidence shows 
+ 9. [2026-10-05T21:45:36Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791236708-1401f9
+    trace_id=a092556536094409a4e2820b7c93eeeb network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T21:45:53Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791236708-1401f9
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791236708-1401f9 trace_id=a092556536094409a4e2820b7c93eeeb result_summary=Based on the analysis of the network-twin predictions, 
+11. [2026-10-05T21:45:53Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791236708-1401f9
+    trace_id=a092556536094409a4e2820b7c93eeeb governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+12. [2026-10-05T21:45:53Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791236708-1401f9
+    disposition=auto-resolve, decision='Based on the analysis of the network-twin predictions, telemetry, alarms, and customer impact, here is my assessment:\n\n**Probable Root Cause Analysis:**\n- **DEN-
+13. [2026-10-05T21:45:55Z] NEGOTIATION | actor=it-resolution-agent | step=5.5
+    correlation_id=fault-1791236708-1401f9
+    network->it proposal (1500 chars): '**: CRC errors on upstream port eth-1/7 with protection\npath eth-1/8 available, causing degraded RSRP (-98 dBm) and packet loss\nspikes up to 4.2%\n- **PHX-04 Site

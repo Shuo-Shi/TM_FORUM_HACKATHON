@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AgentgatewayBedrockInvoke",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Converse",
+        "bedrock:ConverseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:us-west-2::foundation-model/*",
+        "arn:aws:bedrock:us-east-1::foundation-model/*",
+        "arn:aws:bedrock:us-east-2::foundation-model/*",
+        "arn:aws:bedrock:<REGION>:<ACCOUNT_ID>:inference-profile/*"
+      ]
+    },
+    {
+      "Sid": "AgentgatewayBedrockGuardrail",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:ApplyGuardrail",
+        "bedrock:GetGuardrail"
+      ],
+      "Resource": "arn:aws:bedrock:<REGION>:<ACCOUNT_ID>:guardrail/*"
+    }
+  ]
+}

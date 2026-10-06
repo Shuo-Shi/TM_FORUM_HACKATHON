@@ -1,0 +1,25 @@
+{
+  "control_id": "9",
+  "control_name": "Drift against a frozen baseline",
+  "run_id": "fault-1791229889-88ce59",
+  "window_utc": null,
+  "verdict": "PASS",
+  "measured_value": "models match baseline; disposition auto-resolve vs expected auto-resolve (S1-fronthaul-degradation)",
+  "threshold_limit": 1.0,
+  "threshold_version": "G-9-v1",
+  "effective_date": "2026-10-05",
+  "owner": "Afif Mazhar",
+  "evidence_ids": [
+    "b968e0d1-e226-46aa-8ba1-c2159d2a347c",
+    "2b41b441-64c4-48d0-aca0-af604c12eff2",
+    "18401ffc-c18a-4925-9814-134c9cf9e3b4",
+    "4097f6b8-919d-461f-b271-ba58fd7f6c87",
+    "b3b54bcd-a519-49c4-915a-4a67b2063664",
+    "a13ddef4-0dc0-4cfd-b9d6-2d7a920fe14b",
+    "c43a14b1-4687-4f37-978d-e2125c9162ce",
+    "13981916-4c4f-403d-950d-e15bd754b61b"
+  ],
+  "note": "baseline file: /home/ec2-user/evidence/baseline-2026-10-05.json",
+  "evaluated_at": "2026-10-05T20:22:39.844551+00:00",
+  "sha256": "33fcb03caeab199079a4f91c2f6953d4adfff67c847a88c48e926a8f42b3c459"
+}

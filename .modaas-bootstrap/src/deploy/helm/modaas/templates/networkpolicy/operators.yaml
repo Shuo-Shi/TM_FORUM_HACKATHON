@@ -1,0 +1,96 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $awsCidrs := .Values.networkPolicy.awsEndpoints }}
+{{- range $component := list "model" "tool" "agent" }}
+{{- $cfg := index $.Values.operators $component }}
+{{- if $cfg.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $cfg.name }}-egress
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" $ | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "modaas.selectorLabels" (dict "name" $cfg.name) | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+  # AWS API egress (2026-09-05): the operators call bedrock-agentcore-control,
+  # bedrock, IAM etc over 443. Before enforcement was enabled this policy was
+  # decorative; the moment --enable-network-policy=true went live every
+  # registry write ConnectTimeout'd. Public 443 + the EKS Pod Identity
+  # credential endpoint (169.254.170.23:80) are required operator egress.
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except: ["169.254.0.0/16", "10.0.0.0/8"]
+    ports:
+    - port: 443
+      protocol: TCP
+  - to:
+    - ipBlock:
+        cidr: 169.254.170.23/32
+    ports:
+    - port: 80
+      protocol: TCP
+  # kube-apiserver + DNS.
+  # INDENTATION IS LOAD-BEARING HERE. Until 2026-09-19 this `- to:` and every
+  # `- to:` below it sat at 4 spaces, which made them list items inside the
+  # PRECEDING rule's `ports:` array rather than new egress rules. Kubernetes
+  # drops unknown fields silently, so `helm install` only emitted
+  # `Warning: unknown field "spec.egress[1].ports[1].to"` and every one of
+  # these rules vanished. It was invisible because NetworkPolicy enforcement
+  # is off by default on the VPC CNI -- the policy was decorative, so losing
+  # most of it changed nothing. The moment enforcement is enabled, operators
+  # lose DNS and kube-apiserver and every reconcile ConnectTimeouts.
+  # Egress rules must be siblings at 2 spaces. Verify after any edit with:
+  #   helm template ... | kubectl apply --dry-run=server -f -
+  # and confirm no "unknown field spec.egress" warning is printed.
+  - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+    ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+      - port: 443
+        protocol: TCP
+  # AWS endpoints (Bedrock, AgentCore, IAM)
+  {{- with $awsCidrs.bedrockCidrs }}
+  - to:
+      {{- range . }}
+      - ipBlock:
+          cidr: {{ . }}
+      {{- end }}
+    ports:
+      - port: 443
+        protocol: TCP
+  {{- end }}
+  {{- with $awsCidrs.agentCoreCidrs }}
+  - to:
+      {{- range . }}
+      - ipBlock:
+          cidr: {{ . }}
+      {{- end }}
+    ports:
+      - port: 443
+        protocol: TCP
+  {{- end }}
+  {{- with $awsCidrs.iamCidrs }}
+  - to:
+      {{- range . }}
+      - ipBlock:
+          cidr: {{ . }}
+      {{- end }}
+    ports:
+      - port: 443
+        protocol: TCP
+  {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

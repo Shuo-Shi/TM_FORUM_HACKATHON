@@ -1,0 +1,41 @@
+AUDIT TRAIL -- 13 records
+================================================================
+ 1. [2026-10-05T21:44:25Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791236662-9e45fb
+    trace_id=2bc7773cb8a24f26900da39d501dfc19 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T21:44:29Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791236662-9e45fb
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791236662-9e45fb trace_id=2bc7773cb8a24f26900da39d501dfc19 result_summary=Based on the provided context, I can see that the 
+ 3. [2026-10-05T21:44:29Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791236662-9e45fb
+    trace_id=2bc7773cb8a24f26900da39d501dfc19 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 4. [2026-10-05T21:44:29Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791236662-9e45fb
+    disposition=gather-evidence, decision='Based on the provided context, I can see that the fault site is DU-DEN-12-A and there is one impacted customer. Let me summarize the situation:\n\n- **Impacted C
+ 5. [2026-10-05T21:44:32Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236662-9e45fb
+    trace_id=5145c6baf6a94a39bbb9d15cae058231 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T21:44:57Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236662-9e45fb
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236662-9e45fb trace_id=5145c6baf6a94a39bbb9d15cae058231 result_summary=- **Disposition**: Gather evidence (no runbook found for D
+ 7. [2026-10-05T21:44:57Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236662-9e45fb
+    trace_id=5145c6baf6a94a39bbb9d15cae058231 governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 8. [2026-10-05T21:44:57Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236662-9e45fb
+    disposition=gather-evidence, decision='- **Disposition**: Gather evidence (no runbook found for DU-DEN-12-A packet loss)  \n- **Action**: No runbook-approved action available; evidence is ambiguous (p
+ 9. [2026-10-05T21:45:00Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791236662-9e45fb
+    trace_id=8c7c8762b29a4908939d3502b43ef92c network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T21:45:05Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791236662-9e45fb
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791236662-9e45fb trace_id=8c7c8762b29a4908939d3502b43ef92c result_summary=Based on the network-twin prediction and telemetry data
+11. [2026-10-05T21:45:05Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791236662-9e45fb
+    trace_id=8c7c8762b29a4908939d3502b43ef92c governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+12. [2026-10-05T21:45:05Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791236662-9e45fb
+    disposition=auto-resolve, decision='Based on the network-twin prediction and telemetry data:\n\n- **Probable root cause**: CRC errors on upstream port eth-1/7 of DU-DEN-12-A causing packet loss (4.2%)
+13. [2026-10-05T21:45:07Z] NEGOTIATION | actor=it-resolution-agent | step=5.5
+    correlation_id=fault-1791236662-9e45fb
+    network->it proposal (791 chars): 'export CID=fault-1791236662-9e45fb\n\nnetwork-resolution-agent  ·  answer\n------------------------------------------------------------------------\nBased on the net

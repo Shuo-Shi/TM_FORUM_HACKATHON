@@ -1,0 +1,10 @@
+scenario,iteration,run_id,trace_id,control_id,evaluator_exit,verdict,metric_name,measured_value,threshold_value,comparison,output_file
+S1-fronthaul-degradation,1,fault-1791301560-77feab,407de094726a43a59b7072de6b3ab423,7,1,BREACH,,{'coverage_percent':,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301560-77feab.control-7.txt
+S1-fronthaul-degradation,1,fault-1791301560-77feab,407de094726a43a59b7072de6b3ab423,9,1,BREACH,,2270.83,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301560-77feab.control-9.txt
+S1-fronthaul-degradation,1,fault-1791301560-77feab,407de094726a43a59b7072de6b3ab423,16,0,PASS,,25670,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301560-77feab.control-16.txt
+S2-transport-congestion,1,fault-1791301624-421565,259f2946e6d14142951b108db5d52782,7,1,BREACH,,{'coverage_percent':,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301624-421565.control-7.txt
+S2-transport-congestion,1,fault-1791301624-421565,259f2946e6d14142951b108db5d52782,9,0,PASS,,1140.96,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301624-421565.control-9.txt
+S2-transport-congestion,1,fault-1791301624-421565,259f2946e6d14142951b108db5d52782,16,0,PASS,,37712,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301624-421565.control-16.txt
+S3-restricted-change,1,fault-1791301676-148f31,03a45e42b0b741f689f46634c4a4b648,7,1,BREACH,,{'coverage_percent':,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301676-148f31.control-7.txt
+S3-restricted-change,1,fault-1791301676-148f31,03a45e42b0b741f689f46634c4a4b648,9,0,PASS,,1036.18,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301676-148f31.control-9.txt
+S3-restricted-change,1,fault-1791301676-148f31,03a45e42b0b741f689f46634c4a4b648,16,0,PASS,,34076,,,/home/ec2-user/evidence/control-test-allen-20261006T154600Z/evaluation/fault-1791301676-148f31.control-16.txt

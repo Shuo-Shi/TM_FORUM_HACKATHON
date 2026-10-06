@@ -1,0 +1,9 @@
+{"incidents": [
+  {"id": "INC-4401", "severity": "P2", "status": "open", "summary": "Multiple customer complaints: latency/packet loss on 5G edge slice, SITE-DEN-12", "affected_service": "5G-SLICE-EDGE-04", "created": "2026-09-04T09:31:00Z", "runbook": "RB-EDGE-SLICE-DEGRADATION"},
+  {"id": "INC-4398", "severity": "P4", "status": "resolved", "summary": "Scheduled certificate rotation, core API gateway", "affected_service": "CORE-API", "created": "2026-09-03T02:00:00Z", "runbook": "RB-CERT-ROTATE"},
+  {"id": "INC-4412", "severity": "P2", "status": "open", "summary": "Packet loss across two sites, cause not isolated", "affected_service": "5G-SLICE-EDGE-04", "created": "2026-09-04T10:15:00Z", "runbook": "RB-TRANSPORT-INVESTIGATION"},
+  {"id": "INC-4420", "severity": "P1", "status": "open", "summary": "SITE-PHX-04 edge degradation, regulated customer impacted", "affected_service": "5G-SLICE-EDGE-08", "created": "2026-09-04T11:00:00Z", "runbook": "RB-REGULATED-ESCALATION"},
+  {"id": "INC-4388", "severity": "P3", "status": "resolved", "summary": "SD-WAN tunnel flap on SITE-DEN-09 aggregation router", "affected_service": "SD-WAN-PREMIUM", "created": "2026-09-02T14:20:00Z", "runbook": "RB-SDWAN-TUNNEL-FLAP"},
+  {"id": "INC-4425", "severity": "P3", "status": "open", "summary": "Intermittent DNS resolution failures from UPF-DEN-12-1", "affected_service": "5G-CORE-DNS", "created": "2026-09-04T12:45:00Z", "runbook": "RB-DNS-RESOLUTION"},
+  {"id": "INC-4430", "severity": "P2", "status": "open", "summary": "IoT sensor telemetry delays at SITE-PHX-04", "affected_service": "5G-SLICE-EDGE-08", "created": "2026-09-04T13:10:00Z", "runbook": "RB-IOT-LATENCY"}
+]}

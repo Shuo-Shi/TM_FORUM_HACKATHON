@@ -1,0 +1,38 @@
+AUDIT TRAIL -- 12 records
+================================================================
+ 1. [2026-10-05T20:25:19Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791231916-7e1ce5
+    trace_id=8c57a409746a41b39f535aed11a16127 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T20:25:27Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791231916-7e1ce5
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791231916-7e1ce5 trace_id=8c57a409746a41b39f535aed11a16127 result_summary=Now I have all the information needed to provide a
+ 3. [2026-10-05T20:25:27Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791231916-7e1ce5
+    trace_id=8c57a409746a41b39f535aed11a16127 governed call via alias nemotron-super-120b: http_status=200
+ 4. [2026-10-05T20:25:27Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791231916-7e1ce5
+    disposition=auto-resolve, decision="Now I have all the information needed to provide a summary. Based on the data:\n\n1. **Impacted Customer**: Meridian Logistics (CUST-1001) - an enterprise customer 
+ 5. [2026-10-05T20:25:30Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791231916-7e1ce5
+    trace_id=97c6ad375ee84709b254daef3204697e it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T20:25:43Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791231916-7e1ce5
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791231916-7e1ce5 trace_id=97c6ad375ee84709b254daef3204697e result_summary=- **Incident disposition**: Auto-resolve pending network t
+ 7. [2026-10-05T20:25:43Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791231916-7e1ce5
+    trace_id=97c6ad375ee84709b254daef3204697e governed call via alias nemotron-nano-9b: http_status=200
+ 8. [2026-10-05T20:25:43Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791231916-7e1ce5
+    disposition=auto-resolve, decision='- **Incident disposition**: Auto-resolve pending network team action to resolve CRC errors on DU-DEN-12-A eth-1/7 port.  \n- **Action per runbook**: Initiate runboo
+ 9. [2026-10-05T20:25:45Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791231916-7e1ce5
+    trace_id=2b30fe729fa24112999c50641d1e780a network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T20:25:53Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791231916-7e1ce5
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791231916-7e1ce5 trace_id=2b30fe729fa24112999c50641d1e780a result_summary=- **Probable root cause**: Fronthaul degradation at SIT
+11. [2026-10-05T20:25:53Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791231916-7e1ce5
+    trace_id=2b30fe729fa24112999c50641d1e780a governed call via alias nemotron-super-120b: http_status=200
+12. [2026-10-05T20:25:53Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791231916-7e1ce5
+    disposition=auto-resolve, decision='- **Probable root cause**: Fronthaul degradation at SITE-DEN-12 (scenario S1-fronthaul-degradation) causing packet loss (4.2%) and latency (31 ms p95) on DU-DEN-12-

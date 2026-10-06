@@ -1,0 +1,30 @@
+{{- /*
+The default ServiceAccount for kubernetesPod-hosted agent pods, as rendered by
+k8s-agent-operator once the a design note migration has removed the a design note graft.
+
+WHY IT IS COMMENTED OUT RATHER THAN WRITTEN:
+components/modaas-agent-default must be rendered by EXACTLY ONE template. It is
+rendered today by templates/rbac/agent-operator-kubernetespod.yaml, which
+belongs to aws-agent-operator's graft. Rendering it here as well would make
+plain `helm install` fail 100% on a fresh cluster with
+`serviceaccounts "modaas-agent-default" already exists` -- reported by <reviewer> and
+reproduced on account <account-id>, 2026-09-22, render count proven 2 at pin
+19e8f868. `helm upgrade --install` only looks healthy because a failed first
+revision already owns the object.
+
+So the move is part of migration step 3, in the SAME change that deletes the
+graft and its RBAC file (GRAFT-INVENTORY.md §D), not part of installing this
+operator. Uncomment the block below in that change.
+
+The ClusterRole/ClusterRoleBinding for this operator live in
+templates/operators/k8s-agent-operator.yaml, co-located with its Deployment.
+*/ -}}
+{{- if and .Values.operators.k8sAgent.enabled false }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: modaas-agent-default
+  namespace: {{ .Values.global.componentNamespace | default "components" }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+{{- end }}

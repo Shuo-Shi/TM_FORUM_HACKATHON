@@ -1,0 +1,67 @@
+export CID=fault-1791234824-0f9dde
+=== MVW fault-resolution scenario ===
+scenario:       S1-fronthaul-degradation (baseline)
+fault:          Fronthaul degradation at SITE-DEN-12
+correlation_id: fault-1791234824-0f9dde
+trace_id:       1d6ff61ee9634b739816f0e4725b2e13
+
+-- step block 1-3: Customer Experience agent --
+export CID=fault-1791234824-0f9dde
+
+customer-experience-agent  ·  answer
+------------------------------------------------------------------------
+aws: [ERROR]: An error occurred (RuntimeClientError) when calling the
+InvokeAgentRuntime operation: Received error (500) from runtime. Please
+check your CloudWatch logs for more information.
+------------------------------------------------------------------------
+disposition:    unknown
+correlation_id: fault-1791234824-0f9dde
+next:           score-run.py fault-1791234824-0f9dde   # evidence for this run
+
+-- step block 4-6: IT Resolution agent --
+export CID=fault-1791234824-0f9dde
+
+it-resolution-agent  ·  answer
+------------------------------------------------------------------------
+aws: [ERROR]: An error occurred (RuntimeClientError) when calling the
+InvokeAgentRuntime operation: Received error (500) from runtime. Please
+check your CloudWatch logs for more information.
+------------------------------------------------------------------------
+disposition:    unknown
+correlation_id: fault-1791234824-0f9dde
+next:           score-run.py fault-1791234824-0f9dde   # evidence for this run
+
+-- step block 7-9: Network Resolution agent --
+export CID=fault-1791234824-0f9dde
+
+network-resolution-agent  ·  answer
+------------------------------------------------------------------------
+aws: [ERROR]: An error occurred (RuntimeClientError) when calling the
+InvokeAgentRuntime operation: Received error (500) from runtime. Please
+check your CloudWatch logs for more information.
+------------------------------------------------------------------------
+disposition:    unknown
+correlation_id: fault-1791234824-0f9dde
+next:           score-run.py fault-1791234824-0f9dde   # evidence for this run
+
+-- step block 10: Network -> IT negotiation --
+export CID=fault-1791234824-0f9dde
+
+it-resolution-agent  ·  answer
+------------------------------------------------------------------------
+aws: [ERROR]: An error occurred (RuntimeClientError) when calling the
+InvokeAgentRuntime operation: Received error (500) from runtime. Please
+check your CloudWatch logs for more information.
+------------------------------------------------------------------------
+disposition:    unknown
+correlation_id: fault-1791234824-0f9dde
+next:           score-run.py fault-1791234824-0f9dde   # evidence for this run
+
+=== scenario complete: correlation_id=fault-1791234824-0f9dde ===
+
+Read the evidence:
+  kubectl get --raw "/api/v1/namespaces/components/services/audit-store:8080/proxy/timeline?cid=fault-1791234824-0f9dde"
+
+Grade this run:
+  kubectl get --raw "/api/v1/namespaces/components/services/audit-store:8080/proxy/timeline?cid=fault-1791234824-0f9dde" > /tmp/chain.txt
+  python3 score-run.py fault-1791234824-0f9dde S1-fronthaul-degradation /tmp/chain.txt

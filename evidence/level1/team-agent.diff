@@ -1,0 +1,75 @@
+32a33,42
+> _DECIDE = (
+>     " Decision rules: if a maintenance or change freeze, regulatory restriction or "
+>     "approval requirement applies, escalate and name the blocking constraint. "
+>     "Otherwise, if the telemetry fits more than one root cause, do NOT guess: say the "
+>     "evidence is ambiguous, name the two possible causes, state which evidence would "
+>     "disambiguate them, and propose only a reversible, temporary mitigation that can be "
+>     "rolled back. Otherwise, with one clear cause and a runbook-approved action, resolve it. "
+>     "End with exactly one line: DISPOSITION: auto-resolve | gather-evidence | escalate"
+> )
+> 
+38c48
+<         "and what to tell them. Be factual and brief."
+---
+>         "and what to tell them. Be factual and brief." + _DECIDE
+45,47c55
+<         "network team. Be factual and brief. "
+<         "If you receive a negotiation request, evaluate the proposal against "
+<         "the runbook and state whether you agree or disagree."
+---
+>         "network team. Be factual and brief." + _DECIDE
+53,54c61,62
+<         "root cause, your proposed resolution, and the risk of the change. "
+<         "Be factual and brief."
+---
+>         "root cause (or both candidate causes if ambiguous), your proposed action, "
+>         "and the risk of the change. Be factual and brief." + _DECIDE
+138a147,157
+>     if phase == "invocation" and "guardrail" not in str(detail).lower():
+>         d = str(detail).lower()
+>         m = re.search(r"http_status=(\d+)", d)
+>         if "content_filter" in d or "blocked" in d:
+>             verdict = "blocked"
+>     elif "refused" in d or (m and m.group(1) != "200"):
+>         verdict = "not-evaluated(call-failed)"
+>     else:
+>         verdict = "passed"
+>     detail = (f"{detail} | guardrail={os.environ.get('GUARDRAIL_ID', 'gateway-attached')} "
+>                 f"verdict={verdict}")
+169a189,191
+>     m = re.search(r"disposition\s*:?\s*(auto-resolve|gather-evidence|escalate)", (text or "").lower())
+>     if m:
+>         return m.group(1)
+180c202,203
+<         r"unclear", r"need more",
+---
+>         r"unclear", r"need more", r"two possible", r"two plausible", r"cannot distinguish", r"disambiguat",
+> r"gather evidence", r"either"
+300c323
+<     proposal = neg.get("proposal", "")
+---
+>     proposal = str(neg.get("proposal", ""))
+301a325,336
+>     p = proposal.lower()
+>     if re.search(r"freeze|restricted|regulat|escalat|approval", p):
+>         position = "agree: change is out of policy; escalate to the human change board, no action taken"
+>     elif re.search(r"ambiguous|two possible|disambiguat|gather-evidence|inconclusive", p):
+>         if re.search(r"reversible|roll ?back|revert|temporary|mitigat", p):
+>             position = "agree conditionally: reversible mitigation only; no permanent change until disambiguating evidence arrives"
+>         else:
+>             position = "disagree: cause is ambiguous and no reversible action was proposed; resubmit with a rollback plan"
+>     elif re.search(r"resolv|failover|protection path|switch", p):
+>         position = "agree: protection-path switch is runbook-approved (RB-EDGE-SLICE-DEGRADATION); schedule repair in window"
+>     else:
+>         position = "disagree: proposal names no runbook-approved action; request clarification"
+304,305c339
+<         f"received network proposal ({len(proposal)} chars); "
+<         "evaluating against open incident + runbook",
+---
+>         f"network->it proposal ({len(proposal)} chars): {proposal[:300]!r} | it_position={position}",
+307,310d340
+<     )
+<     position = (
+<         "agree: protection-path switch is runbook-approved "
+<         "(RB-EDGE-SLICE-DEGRADATION); schedule optic replacement in window"

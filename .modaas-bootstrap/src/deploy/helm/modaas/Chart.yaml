@@ -1,0 +1,55 @@
+apiVersion: v2
+name: modaas
+description: |
+  MoDaaS — TMF GB1085 Model-as-a-Service governance substrate for ODA Canvas
+  on AWS. Installs three governed-asset v1beta1 CRDs (ModelConfig, ToolConfig,
+  AgentConfig) plus the Registry backing-selector CRD (a design note/a design note), the
+  three reconciler operators in modaas-system, the PDP, and (opt-in) the
+  authz-gateway ext_authz backend (a design note/086/088). References the
+  agentgateway dataplane as a dependency (a design note v3 architecture) — MoDaaS
+  contributes to agentgateway upstream rather than forking it; it is NOT
+  vendored into this chart. agentgateway is the sole dataplane; identity and
+  admission shim during the transition (docs/DATAPLANE-DIRECTION.md).
+type: application
+version: 0.1.0
+appVersion: "1.2.4"
+kubeVersion: ">=1.27.0-0"  # -0 admits EKS build suffixes (1.36.2-eks-xxxx parses as semver pre-release)
+dependencies:
+  # agentgateway is governed by the Agentic AI Foundation (Linux Foundation),
+  # not this project. Referenced by OCI pin, never vendored into this repo
+  # tree (a design note v3-architecture.md:35). `helm dependency update` fetches the
+  # chart archive into charts/ at build time only — it is not committed.
+  # Requires Gateway API CRDs as a prerequisite (make gateway-api / see
+  # deploy/helm/modaas/README.md); those stay outside this chart's lifecycle
+  # since they are a foundational, cross-project Kubernetes extension.
+    # Gated on its OWN flag, default false: the documented install path (and
+    # Lab 2) installs the agentgateway charts as standalone releases BEFORE
+    # this chart; as subcharts they make helm try to adopt CRDs another
+    # release already owns ("invalid ownership metadata").
+  - name: agentgateway-crds
+    version: "1.4.1"
+    repository: "oci://cr.agentgateway.dev/charts"
+    condition: agentgatewaySubchart.enabled
+  - name: agentgateway
+    version: "1.4.1"
+    repository: "oci://cr.agentgateway.dev/charts"
+    condition: agentgatewaySubchart.enabled
+keywords:
+  - tmforum
+  - oda
+  - canvas
+  - gb1085
+  - bedrock
+  - agentcore
+  - agentgateway
+  - modaas
+annotations:
+  modaas.tmforum.org/dd: "a design note, a design note, a design note, a design note, a design note"
+  modaas.tmforum.org/notes: |
+    Production chart packaging the live modaas-v3 cluster topology (v3
+    architecture, agentgateway transition). See deploy/helm/modaas/README.md
+    for prerequisites, install, upgrade, and migration.
+  artifacthub.io/changes: |
+    - Initial 0.1.0 chart for DTW Copenhagen 2026.
+    - authz-gateway folded into templates/authz-gateway/ (2026-08-26).
+    - agentgateway referenced as a Chart.yaml dependency, not vendored (2026-08-26).

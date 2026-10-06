@@ -1,0 +1,318 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MoDaaS Helm chart values",
+  "description": "Schema for MoDaaS chart 0.1.0 \u2014 enforces 12-digit AWS account IDs, ARN format on IRSA fields, and required Canvas integration toggles.",
+  "type": "object",
+  "required": [
+    "global",
+    "operators"
+  ],
+  "properties": {
+    "global": {
+      "type": "object",
+      "required": [
+        "namespace",
+        "componentNamespace",
+        "canvasNamespace",
+        "aws"
+      ],
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "componentNamespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canvasNamespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aws": {
+          "type": "object",
+          "required": [
+            "region"
+          ],
+          "properties": {
+            "accountId": {
+              "type": "string",
+              "oneOf": [
+                {
+                  "const": ""
+                },
+                {
+                  "pattern": "^[0-9]{12}$"
+                }
+              ]
+            },
+            "region": {
+              "type": "string",
+              "minLength": 3
+            },
+            "profile": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "namespaces": {
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean"
+        }
+      }
+    },
+    "operators": {
+      "type": "object",
+      "required": [
+        "model",
+        "tool",
+        "agent"
+      ],
+      "properties": {
+        "model": {
+          "$ref": "#/definitions/operatorBlock"
+        },
+        "tool": {
+          "$ref": "#/definitions/operatorBlock"
+        },
+        "agent": {
+          "$ref": "#/definitions/operatorBlock"
+        }
+      }
+    },
+    "canvasIntegration": {
+      "type": "object",
+      "properties": {
+        "ownerReferences": {
+          "type": "boolean"
+        },
+        "identityConfig": {
+          "type": "boolean"
+        },
+        "dependentApi": {
+          "type": "boolean"
+        },
+        "publishedNotification": {
+          "type": "boolean"
+        },
+        "auditLedger": {
+          "type": "object"
+        }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "properties": {
+        "installDefault": {
+          "type": "boolean"
+        },
+        "defaultBacking": {
+          "type": "string",
+          "enum": [
+            "agentcore",
+            "tmf639",
+            "fake"
+          ]
+        },
+        "defaultName": {
+          "type": "string"
+        },
+        "agentCoreRegistryId": {
+          "type": "string"
+        },
+        "tmf639Endpoint": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        }
+      }
+    },
+    "bedrock": {
+      "type": "object",
+      "properties": {
+        "defaultRegion": {
+          "type": "string"
+        },
+        "guardrailDefaultMode": {
+          "type": "string",
+          "enum": [
+            "enforce",
+            "off",
+            "audit"
+          ]
+        }
+      }
+    },
+    "agentCoreGateway": {
+      "type": "object",
+      "properties": {
+        "gatewayId": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        }
+      }
+    },
+    "rbac": {
+      "type": "object"
+    },
+    "serviceAccount": {
+      "type": "object"
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowFrom": {
+          "type": "array"
+        },
+        "awsEndpoints": {
+          "type": "object"
+        }
+      }
+    },
+    "serviceMonitor": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "interval": {
+          "type": "string"
+        },
+        "scrapeTimeout": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "object"
+        }
+      }
+    },
+    "test": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "endToEnd": {
+          "type": "boolean"
+        },
+        "image": {
+          "$ref": "#/definitions/imageBlock"
+        }
+      }
+    },
+    "commonLabels": {
+      "type": "object"
+    }
+  },
+  "definitions": {
+    "irsaArn": {
+      "type": "string",
+      "oneOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^arn:aws:iam::[0-9]{12}:role/.+$"
+        }
+      ]
+    },
+    "imageBlock": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never",
+            ""
+          ]
+        }
+      }
+    },
+    "operatorBlock": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "name"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "image": {
+          "$ref": "#/definitions/imageBlock"
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "irsaRoleArn": {
+          "$ref": "#/definitions/irsaArn"
+        },
+        "env": {
+          "type": "array"
+        },
+        "resources": {
+          "type": "object"
+        },
+        "nodeSelector": {
+          "type": "object"
+        },
+        "tolerations": {
+          "type": "array"
+        },
+        "affinity": {
+          "type": "object"
+        },
+        "peering": {
+          "type": "object"
+        },
+        "watchNamespaces": {
+          "type": "array"
+        },
+        "registryMode": {
+          "type": "string",
+          "enum": [
+            "real",
+            "stub",
+            "fake",
+            "in-memory"
+          ]
+        },
+        "logging": {
+          "type": "string"
+        },
+        "keycloak": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

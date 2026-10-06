@@ -1,0 +1,17 @@
+# a design note Mechanism 2: exact AWS SDK versions live in ONE file, referenced here.
+# pip resolves this path relative to THIS requirements.txt, so the operator's
+# build context carries a copy refreshed by build-and-push.sh (drift-guarded by
+# operators/shared/tests/test_sdk_pin_discipline.py). A floor alone let the image
+# and the test venv straddle the botocore release that moved the Registry API.
+-c constraints/aws-sdk.txt
+kopf==1.37.2
+kubernetes==27.2.0
+python-json-logger==2.0.7
+PyYAML
+boto3>=1.42.93
+httpx>=0.27
+# a design note task #175: CloudWatch GenAI Observability via OTLP -> ADOT collector
+opentelemetry-api>=1.27.0
+opentelemetry-sdk>=1.27.0
+opentelemetry-exporter-otlp-proto-grpc>=1.27.0
+opentelemetry-instrumentation-botocore>=0.48b0

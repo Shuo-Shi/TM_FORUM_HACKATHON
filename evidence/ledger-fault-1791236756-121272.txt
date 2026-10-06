@@ -1,0 +1,43 @@
+AUDIT TRAIL -- 13 records
+================================================================
+ 1. [2026-10-05T21:45:58Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791236756-121272
+    trace_id=a334b07dbc9a43f59b30ed9d97b67d79 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T21:46:28Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791236756-121272
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791236756-121272 trace_id=a334b07dbc9a43f59b30ed9d97b67d79 result_summary=Based on the evidence:
+
+- **Impacted customers**: 
+ 3. [2026-10-05T21:46:28Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791236756-121272
+    trace_id=a334b07dbc9a43f59b30ed9d97b67d79 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 4. [2026-10-05T21:46:28Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791236756-121272
+    disposition=escalate, decision="Based on the evidence:\n\n- **Impacted customers**: CUST-3310 (Cascade Health) and CUST-5890 (Greenfield Agriculture) at SITE-PHX-04\n- **How they are impacted**: Packe
+ 5. [2026-10-05T21:46:30Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236756-121272
+    trace_id=a152f7628ebe43bca24fae8458315043 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T21:46:32Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236756-121272
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236756-121272 trace_id=a152f7628ebe43bca24fae8458315043 result_summary=- **Incident disposition**: Escalate due to regulatory and
+ 7. [2026-10-05T21:46:32Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236756-121272
+    trace_id=a152f7628ebe43bca24fae8458315043 governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 8. [2026-10-05T21:46:32Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236756-121272
+    disposition=escalate, decision='- **Incident disposition**: Escalate due to regulatory and maintenance constraints.  \n- **Action per runbook**: No actionable resolution possible; policy blocks change
+ 9. [2026-10-05T21:46:34Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791236756-121272
+    trace_id=2d167445ea994b93ba6cacf8a5eee143 network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T21:46:47Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791236756-121272
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791236756-121272 trace_id=2d167445ea994b93ba6cacf8a5eee143 result_summary=- Probable root cause: Failing optic on RTR-PHX-04-CORE
+11. [2026-10-05T21:46:47Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791236756-121272
+    trace_id=2d167445ea994b93ba6cacf8a5eee143 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+12. [2026-10-05T21:46:47Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791236756-121272
+    disposition=escalate, decision='- Probable root cause: Failing optic on RTR-PHX-04-CORE eth-2/3 (network-twin prediction with 0.91 confidence, telemetry shows packet loss rising to 6.8% and latency 44
+13. [2026-10-05T21:46:49Z] NEGOTIATION | actor=it-resolution-agent | step=5.5
+    correlation_id=fault-1791236756-121272
+    network->it proposal (1007 chars): 'export CID=fault-1791236756-121272\n\nnetwork-resolution-agent  ·  answer\n------------------------------------------------------------------------\n- Probable root

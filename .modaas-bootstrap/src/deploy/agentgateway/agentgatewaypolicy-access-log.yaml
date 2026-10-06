@@ -1,0 +1,49 @@
+# The run, trace and action ids on the gateway's per-call access-log line.
+#
+# Every model and tool call through modaas-agw already writes one line with
+# the call's tokens and cost (gen_ai.usage.input_tokens,
+# gen_ai.usage.output_tokens, agw.ai.usage.cost.total). This policy adds the
+# three ids that say which run spent them:
+#
+#   modaas.run_id     the caller's `modaas-correlation-id` baggage member,
+#                     else the trace id, else the action id (modaas-authz,
+#                     authz-gateway/tracectx.py resolve)
+#   modaas.trace_id   the W3C trace id from the caller's traceparent
+#   modaas.action_id  the id modaas-authz minted (or echoed) for this decision
+#
+# The values come from the authz hook (agentgatewaypolicy-authz-hook.yaml):
+# modaas-authz returns them as x-modaas-* headers and the hook's
+# responseMetadata lifts them into the `extauthz` CEL variable read here. A
+# request that never crossed the hook has no value, and agentgateway then
+# omits the field rather than failing the line.
+#
+# Why this matters: a per-run spend cap (hackathon control ACN-COST-001) sums
+# input plus output tokens over one run. This line is the record to build that
+# on, because the agent does not write it. Without the run id a team could
+# only join calls to runs by alias and time window. The run id is held to the
+# W3C baggage value grammar in tracectx.py, because values here are written
+# unquoted and a space would let a caller append its own fields.
+#
+# Gateway-wide (no sectionName), for the same reason the hook policy is: a
+# listener added later must not silently log calls with no run.
+# tests/test_agentgateway_access_log.py pins every value to a key the hook sets.
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: modaas-access-log
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: modaas-agw
+  frontend:
+    accessLog:
+      attributes:
+        add:
+          - name: modaas.run_id
+            expression: 'extauthz.correlationId'
+          - name: modaas.trace_id
+            expression: 'extauthz.traceId'
+          - name: modaas.action_id
+            expression: 'extauthz.actionId'

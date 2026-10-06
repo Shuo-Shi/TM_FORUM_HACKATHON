@@ -1,0 +1,58 @@
+trace b73132ca238f47b785f2073171176ec0: 53 spans from 3 AgentCore agent(s)
+  UTC       agent                       span                                      kind       in    out  action id
+  22:25:49  customer-experience-agent   POST /invocations                         SERVER                
+  22:25:49  customer-experience-agent   mcp tools/list                            CLIENT                
+  22:25:49  customer-experience-agent   invoke_agent Strands Agents               INTERNAL   8176    224  
+  22:25:49  customer-experience-agent   execute_event_loop_cycle                  INTERNAL                
+  22:25:49  customer-experience-agent   chat                                      INTERNAL   3813     35  
+  22:25:50  customer-experience-agent   POST                                      CLIENT                
+  22:25:51  customer-experience-agent   execute_tool customer-records___customer_lookup  INTERNAL                
+  22:25:51  customer-experience-agent   mcp tools/call customer-records___customer_lookup  CLIENT                
+  22:25:51  customer-experience-agent   execute_event_loop_cycle                  INTERNAL                
+  22:25:51  customer-experience-agent   chat                                      INTERNAL   4363    189  
+  22:25:51  customer-experience-agent   POST                                      CLIENT                
+  22:25:56  it-resolution-agent         POST /invocations                         SERVER                
+  22:25:56  it-resolution-agent         mcp tools/list                            CLIENT                
+  22:25:57  it-resolution-agent         invoke_agent Strands Agents               INTERNAL  13015    219  
+  22:25:57  it-resolution-agent         execute_event_loop_cycle                  INTERNAL                
+  22:25:57  it-resolution-agent         chat                                      INTERNAL   3495     58  
+  22:25:57  it-resolution-agent         POST                                      CLIENT                
+  22:25:58  it-resolution-agent         execute_tool evidence-lookup___get_evidence  INTERNAL                
+  22:25:58  it-resolution-agent         mcp tools/call evidence-lookup___get_evidence  CLIENT                
+  22:26:04  it-resolution-agent         execute_event_loop_cycle                  INTERNAL                
+  22:26:04  it-resolution-agent         chat                                      INTERNAL   4709     39  
+  22:26:04  it-resolution-agent         POST                                      CLIENT                
+  22:26:05  it-resolution-agent         execute_tool runbook-lookup___lookup      INTERNAL                
+  22:26:05  it-resolution-agent         mcp tools/call runbook-lookup___lookup    CLIENT                
+  22:26:05  it-resolution-agent         execute_event_loop_cycle                  INTERNAL                
+  22:26:05  it-resolution-agent         chat                                      INTERNAL   4811    122  
+  22:26:05  it-resolution-agent         POST                                      CLIENT                
+  22:26:10  network-resolution-agent    POST /invocations                         SERVER                
+  22:26:10  network-resolution-agent    mcp tools/list                            CLIENT                
+  22:26:10  network-resolution-agent    invoke_agent Strands Agents               INTERNAL  20883    327  
+  22:26:10  network-resolution-agent    execute_event_loop_cycle                  INTERNAL                
+  22:26:10  network-resolution-agent    chat                                      INTERNAL   3767     37  
+  22:26:10  network-resolution-agent    POST                                      CLIENT                
+  22:26:12  network-resolution-agent    execute_tool network-twin___predict_rsrp  INTERNAL                
+  22:26:12  network-resolution-agent    mcp tools/call network-twin___predict_rsrp  CLIENT                
+  22:26:12  network-resolution-agent    execute_event_loop_cycle                  INTERNAL                
+  22:26:12  network-resolution-agent    chat                                      INTERNAL   3846     36  
+  22:26:12  network-resolution-agent    POST                                      CLIENT                
+  22:26:14  network-resolution-agent    execute_tool runbook-lookup___lookup      INTERNAL                
+  22:26:14  network-resolution-agent    mcp tools/call runbook-lookup___lookup    CLIENT                
+  22:26:14  network-resolution-agent    execute_event_loop_cycle                  INTERNAL                
+  22:26:14  network-resolution-agent    chat                                      INTERNAL   3995     35  
+  22:26:14  network-resolution-agent    POST                                      CLIENT                
+  22:26:15  network-resolution-agent    execute_tool customer-records___customer_lookup  INTERNAL                
+  22:26:15  network-resolution-agent    mcp tools/call customer-records___customer_lookup  CLIENT                
+  22:26:16  network-resolution-agent    execute_event_loop_cycle                  INTERNAL                
+  22:26:16  network-resolution-agent    chat                                      INTERNAL   4545     46  
+  22:26:16  network-resolution-agent    POST                                      CLIENT                
+  22:26:17  network-resolution-agent    execute_tool runbook-lookup___lookup      INTERNAL                
+  22:26:17  network-resolution-agent    mcp tools/call runbook-lookup___lookup    CLIENT                
+  22:26:17  network-resolution-agent    execute_event_loop_cycle                  INTERNAL                
+  22:26:17  network-resolution-agent    chat                                      INTERNAL   4730    173  
+  22:26:17  network-resolution-agent    POST                                      CLIENT                
+model calls: 13   input tokens: 84148   output tokens: 1540   total: 85688
+The gateway's own lines for the same run (the figures of record):
+  kubectl -n agentgateway-system logs deploy/modaas-agw --since=24h | grep 'modaas.trace_id="b73132ca238f47b785f2073171176ec0"'

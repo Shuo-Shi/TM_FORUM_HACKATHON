@@ -1,0 +1,31 @@
+MoDaaS {{ .Chart.AppVersion }} installed (release: {{ .Release.Name }}).
+
+Cluster context:
+  - Account:    {{ .Values.global.aws.accountId | default "<unset>" }}
+  - Region:     {{ .Values.global.aws.region }}
+
+Namespaces:
+  - Operators:    {{ .Values.global.namespace }}
+  - Asset CRs:    {{ .Values.global.componentNamespace }}
+
+Verify install:
+  kubectl get crd | grep oda.tmforum.org
+  kubectl -n {{ .Values.global.namespace }} get deploy
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+{{- if not .Values.operators.model.irsaRoleArn }}
+
+WARNING: operators.model.irsaRoleArn is empty — aws-model-operator runs without
+IRSA and Bedrock CRUD will fail. Override:
+  --set operators.model.irsaRoleArn=arn:aws:iam::<ACCOUNT>:role/aws-model-operator
+{{- end }}
+
+
+{{- if not .Values.canvasIntegration.ownerReferences }}
+
+NOTE: canvasIntegration.ownerReferences=false — a design note owner-refs disabled.
+Component cascade-delete will not propagate to MoDaaS asset CRs.
+{{- end }}
+
+Documentation: deploy/helm/modaas/README.md
+Plan:          docs/superpowers/plans/2026-05-30-helm-chart-packaging.md

@@ -1,0 +1,53 @@
+AUDIT TRAIL -- 16 records
+================================================================
+ 1. [2026-10-05T21:38:47Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=5a31c31ae3354007a8049e2394858d77 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T21:39:13Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791236325-b1c39b
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791236325-b1c39b trace_id=5a31c31ae3354007a8049e2394858d77 result_summary=**Impacted customers:**  
+- CUST-3310 (Cascade Hea
+ 3. [2026-10-05T21:39:13Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=5a31c31ae3354007a8049e2394858d77 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 4. [2026-10-05T21:39:13Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791236325-b1c39b
+    disposition=escalate, decision='**Impacted customers:**  \n- CUST-3310 (Cascade Health) – enterprise tier, services: 5G-SLICE-EDGE-08, FIBER-DIA-10G; open complaint CMP-812 (patient monitoring devices
+ 5. [2026-10-05T21:39:15Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=9763230a109e43cda5c434093f3558ab it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T21:39:17Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236325-b1c39b
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236325-b1c39b trace_id=9763230a109e43cda5c434093f3558ab result_summary=- **Incident disposition**: Escalate due to policy constra
+ 7. [2026-10-05T21:39:17Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=9763230a109e43cda5c434093f3558ab governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 8. [2026-10-05T21:39:17Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236325-b1c39b
+    disposition=escalate, decision='- **Incident disposition**: Escalate due to policy constraints (maintenance freeze and regulated customer approval required).  \n- **Action per runbook**: No actionable
+ 9. [2026-10-05T21:39:19Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=a240bda6ff3440708ba766d353e2c55b network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T21:39:30Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791236325-b1c39b
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791236325-b1c39b trace_id=a240bda6ff3440708ba766d353e2c55b result_summary=Based on the analysis, here are the findings:
+
+- **Netw
+11. [2026-10-05T21:39:30Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=a240bda6ff3440708ba766d353e2c55b governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+12. [2026-10-05T21:39:30Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791236325-b1c39b
+    disposition=escalate, decision='Based on the analysis, here are the findings:\n\n- **Network Twin Prediction**: Shows degraded signal quality with RSRP of -105 dBm, assessment indicating "failing opti
+13. [2026-10-05T21:39:33Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=7b8e2c742496474aacf0cef0c473525c it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+14. [2026-10-05T21:39:35Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236325-b1c39b
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236325-b1c39b trace_id=7b8e2c742496474aacf0cef0c473525c result_summary=- **Incident disposition**: Escalate due to blocking const
+15. [2026-10-05T21:39:35Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236325-b1c39b
+    trace_id=7b8e2c742496474aacf0cef0c473525c governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+16. [2026-10-05T21:39:35Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236325-b1c39b
+    disposition=escalate, decision='- **Incident disposition**: Escalate due to blocking constraints (maintenance freeze and HIPAA approval requirements).  \n- **Action per runbook**: Escalate to network 

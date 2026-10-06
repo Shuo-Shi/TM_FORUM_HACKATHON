@@ -1,0 +1,230 @@
+{{- if .Values.otelCollector.enabled }}
+{{- /*
+The a design note collector, plus the a design note `logs/audit` evidence pipeline.
+
+a design note amends a design note: `logs/audit` carries EVIDENCE records (the MoDaaS evidence
+contract, `evidence/evidence_record.schema.json`) rather than the retired AI
+gateway's records that a design note wrote it for. `ai-gateway-pod` was retired
+2026-09-01 and its log group has no writer.
+
+Three properties below are load-bearing and easy to lose:
+
+  1. `k8sattributes` sits BEFORE `batch`. Its own README: the processor "must
+     appear before any batching or tail sampling, which remove this
+     information". Swapped, the pipeline renders, starts, and stamps nothing --
+     and every decision record becomes inadmissible to the reader with no error
+     anywhere. deploy/tests/test_evidence_chart.py pins the order.
+  2. `pod_association` is `from: connection`, so the stamp comes from the source
+     IP resolved against the API server. A payload-based association would let
+     a writer name its own namespace and deployment, and a design note's write-integrity
+     check would be decoration.
+  3. The filter selects on `modaas.evidence.schema_version`. The OTLP endpoint is
+     shared with every other emitter in the cluster (a design note §6), so without it
+     the audit sink accumulates application logs and an approver's timeline read
+     has to sift them.
+
+NOT extracted: `k8s.service_account.name`. a design note point 5 says the collector
+stamps "source pod and service account", and the k8sattributes processor has no
+service-account metadata key (checked 2026-09-26 against its README). The stamp
+is namespace + deployment + pod, which is what `evidence/otlp.py::STAMP_KEYS`
+checks; the residual is that forging a decision record needs create-Deployment
+RBAC in the attestor's namespace.
+*/ -}}
+{{- $ev := .Values.otelCollector.evidence | default dict }}
+{{- $cw := $ev.cloudWatchLogs | default dict }}
+{{- if $ev.enabled }}
+  {{- if eq ($ev.exporter | default "debug") "awscloudwatchlogs" }}
+    {{- if not $cw.logGroupName }}
+      {{- fail "otelCollector.evidence.cloudWatchLogs.logGroupName is required when otelCollector.evidence.exporter=awscloudwatchlogs -- the exporter has no default and would create a log group named \"\" on first export" }}
+    {{- end }}
+    {{- $allowed := list 1 3 5 7 14 30 60 90 120 150 180 365 400 545 731 1827 2192 2557 2922 3288 3653 }}
+    {{- $retention := $cw.retentionInDays | default 365 | int }}
+    {{- if not (has $retention $allowed) }}
+      {{- fail (printf "otelCollector.evidence.cloudWatchLogs.retentionInDays=%d is not a retention CloudWatch accepts; allowed: %v. An unaccepted value is rejected at RUNTIME on the first export, by which point records are already being dropped." $retention $allowed) }}
+    {{- end }}
+  {{- else if ne ($ev.exporter | default "debug") "debug" }}
+    {{- fail (printf "otelCollector.evidence.exporter=%q is not configured by this chart (known: debug, awscloudwatchlogs). A pipeline naming an unconfigured exporter is a collector that refuses to start, which `helm install --wait` reports as a timeout rather than as the config error it is. Community sinks (a design note) add their exporter block here." $ev.exporter) }}
+  {{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: modaas-otel-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: opentelemetry-collector
+{{- if .Values.otelCollector.irsaRoleArn }}
+  annotations:
+    # IRSA for the awscloudwatchlogs exporter: logs:CreateLogGroup,
+    # CreateLogStream, PutLogEvents and (with retention set) PutRetentionPolicy.
+    # A dedicated role rather than the node role because the audit sink is the
+    # one log group that must not be writable by every workload on the node.
+    eks.amazonaws.com/role-arn: {{ .Values.otelCollector.irsaRoleArn | quote }}
+{{- end }}
+{{- if $ev.enabled }}
+---
+# k8sattributes reads pods and namespaces to resolve the source of a connection.
+# WITHOUT these verbs the processor silently extracts nothing, every decision
+# record arrives unstamped, and the reader refuses all of them -- a total loss of
+# the platform-attested half of the audit trail with no error in any log.
+# Cluster-scoped because the processor resolves pods in whatever namespace the
+# connection came from; `replicasets` is what turns an owning ReplicaSet into
+# `k8s.deployment.name`, which is the half of the stamp that identifies the
+# attestor.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: modaas-otel-collector
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: modaas-otel-collector
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: modaas-otel-collector
+subjects:
+  - kind: ServiceAccount
+    name: modaas-otel-collector
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- if and $ev.enabled $cw.kmsKeyArn }}
+---
+# What the collector CANNOT do for you, in a place `kubectl get cm` will find.
+#
+# The awscloudwatchlogs exporter has no KMS option, and its `log_retention`
+# applies only to a log group the exporter itself creates. A KMS key therefore
+# forces a pre-created group, which in turn means the exporter's retention is
+# ignored. Accepting `kmsKeyArn` and rendering it nowhere would leave an operator
+# believing the audit sink is encrypted with their key when it is not, so it is
+# surfaced here as an explicit precondition instead.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: modaas-evidence-sink-preconditions
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: evidence
+data:
+  README: |
+    The MoDaaS evidence sink needs two steps this chart cannot perform.
+
+    The awscloudwatchlogs exporter has no KMS option, and its log_retention
+    setting applies ONLY to a log group it creates itself. You asked for a KMS
+    key, so the group must exist before the collector first exports -- and a
+    pre-existing group ignores the exporter's retention.
+
+    Run both, once, in account/region {{ .Values.global.aws.region }}:
+  create-log-group: |
+    aws logs create-log-group \
+      --log-group-name {{ $cw.logGroupName | quote }} \
+      --kms-key-id {{ $cw.kmsKeyArn | quote }} \
+      --region {{ .Values.global.aws.region }}
+  put-retention-policy: |
+    aws logs put-retention-policy \
+      --log-group-name {{ $cw.logGroupName | quote }} \
+      --retention-in-days {{ $cw.retentionInDays | default 365 | int }} \
+      --region {{ .Values.global.aws.region }}
+  kmsKeyArn: {{ $cw.kmsKeyArn | quote }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/component: telemetry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+  template:
+    metadata:
+      annotations:
+        # Rolls the collector when its config changes: it reads the config
+        # once, at start (otel-collector-config.yaml has the measurement).
+        checksum/config: {{ include (print $.Template.BasePath "/observability/otel-collector-config.yaml") . | sha256sum }}
+      labels:
+        app.kubernetes.io/name: opentelemetry-collector
+        app.kubernetes.io/component: telemetry
+    spec:
+      serviceAccountName: modaas-otel-collector
+      containers:
+        - name: collector
+          image: "{{ .Values.otelCollector.image.repository }}:{{ .Values.otelCollector.image.tag }}"
+          args:
+            - --config=/etc/otel/config.yaml
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
+            initialDelaySeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentelemetry-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/component: telemetry
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: opentelemetry-collector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+{{- end }}

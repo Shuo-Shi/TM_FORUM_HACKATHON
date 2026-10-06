@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: velocityx-filesystem
+  namespace: components
+
+spec:
+  selector:
+    app: velocityx-filesystem
+
+  ports:
+  - port: 8080
+    targetPort: 8080

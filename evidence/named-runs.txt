@@ -1,0 +1,3 @@
+control_id,verdict,run_id,scenario,threshold_version
+16,PASS,,S1-fronthaul-degradation,G-16-v1
+16,BREACH,fault-1791238058-1f15ab,S2-transport-congestion,G-16-v1

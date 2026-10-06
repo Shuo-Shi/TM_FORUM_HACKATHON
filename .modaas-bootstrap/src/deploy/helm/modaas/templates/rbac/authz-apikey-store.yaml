@@ -1,0 +1,45 @@
+# RBAC for the authz gateway's API-key bootstrap tier (a design note, W4-D).
+#
+# keycloak_identity._fetch_agw_keys reads Secret agw-apikeys in the gateway
+# namespace via the K8s API with the pod's own SA token, and validates each
+# presented Bearer key by SHA-256 digest against it. Without this Role the read
+# is 403, _key_digests raises JwksUnavailable, and -- because the ext_authz hook
+# is FailClosed -- EVERY governed call refuses with "key-store-unavailable".
+#
+# This was missing from the chart. On the shared dev cluster it had been granted
+# by hand, which is why the a design note canary proved out live there (12e66eb6) and
+# why `kubectl auth can-i get secrets/agw-apikeys --as=...:modaas-authz` said
+# "no" on a fresh vended cluster on 2026-09-20 -- found while landing a hardening note, the
+# rebind that puts this code path in front of all traffic for the first time.
+#
+# Least privilege: one verb, one resource, one name. No list/watch.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: modaas-authz-apikey-store
+  namespace: {{ .Values.agentgatewayRoutes.namespace | default "agentgateway-system" }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authz-gateway
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["agw-apikeys"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: modaas-authz-apikey-store
+  namespace: {{ .Values.agentgatewayRoutes.namespace | default "agentgateway-system" }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authz-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: modaas-authz-apikey-store
+subjects:
+  - kind: ServiceAccount
+    name: modaas-authz
+    namespace: {{ .Values.global.namespace | default "modaas-system" }}

@@ -1,0 +1,71 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: modaas-governance-guardrail
+  annotations:
+    modaas.tmforum.org/purpose: keep participants out of the governance plane
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups:
+      - '*'
+      apiVersions:
+      - '*'
+      operations:
+      - CREATE
+      - UPDATE
+      - DELETE
+      resources:
+      - '*/*'
+      scope: '*'
+  matchConditions:
+  - name: is-participant
+    expression: '''modaas:participants'' in request.userInfo.groups || request.userInfo.username.contains('':assumed-role/WSParticipantRole/'')'
+  variables:
+  - name: ns
+    expression: 'has(request.namespace) ? request.namespace : '''''
+  - name: obj
+    expression: 'request.operation == ''DELETE'' ? oldObject : object'
+  - name: protectedNs
+    expression: "['modaas-system','agentgateway-system','canvas','canvas-system','canvas-vault',\n\
+      \ 'istio-system','istio-ingress','cert-manager','kube-system']"
+  - name: isTeamCedarPolicy
+    expression: "variables.ns == 'modaas-system' && request.resource.resource == 'configmaps'\
+      \ && variables.obj != null && has(variables.obj.metadata.labels) && variables.obj.metadata.labels['app.kubernetes.io/part-of']\
+      \ == 'modaas-pdp' && !('app.kubernetes.io/managed-by' in variables.obj.metadata.labels)\
+      \ && (request.operation == 'DELETE'\n    || (has(object.metadata.annotations)\n\
+      \        && 'modaas.tmforum.org/policy-id' in object.metadata.annotations))\n\
+      && (oldObject == null || !has(oldObject.metadata.labels)\n    || !('app.kubernetes.io/managed-by'\
+      \ in oldObject.metadata.labels))"
+  - name: guardedClusterKinds
+    expression: "variables.ns == '' && (\n  request.resource.group == 'rbac.authorization.k8s.io'\n\
+      \  || request.resource.group == 'admissionregistration.k8s.io'\n  || (request.resource.resource\
+      \ == 'customresourcedefinitions'\n      && variables.obj != null\n      && (variables.obj.metadata.name.endsWith('.oda.tmforum.org')\n\
+      \          || variables.obj.metadata.name.endsWith('.agentgateway.dev')\n  \
+      \        || variables.obj.metadata.name.endsWith('.gateway.networking.k8s.io')\n\
+      \          || variables.obj.metadata.name.endsWith('.istio.io')\n          ||\
+      \ variables.obj.metadata.name.endsWith('.cert-manager.io')))\n  || (request.resource.resource\
+      \ == 'namespaces' && request.operation != 'CREATE'\n      && variables.obj !=\
+      \ null && variables.obj.metadata.name in variables.protectedNs)\n  || request.resource.resource\
+      \ == 'nodes')"
+  validations:
+  - expression: '!(variables.ns in variables.protectedNs) || variables.isTeamCedarPolicy'
+    messageExpression: '"MoDaaS governance guardrail: namespace " + variables.ns +
+      " is the governance plane and is read-only for participants. Build in components
+      or in a namespace of your own (kubectl create ns team-<name>). Team Cedar policies
+      in modaas-system are allowed as labelled ConfigMaps (Module 6)."'
+  - expression: '!variables.guardedClusterKinds'
+    messageExpression: '"MoDaaS governance guardrail: " + request.resource.resource
+      + " changes that affect RBAC, admission, the MoDaaS/gateway/mesh CRDs or protected
+      namespaces are reserved for the platform. Your own CRDs, namespaces and workloads
+      are fine."'
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: modaas-governance-guardrail
+spec:
+  policyName: modaas-governance-guardrail
+  validationActions:
+  - Deny

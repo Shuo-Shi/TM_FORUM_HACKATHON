@@ -1,0 +1,38 @@
+AUDIT TRAIL -- 12 records
+================================================================
+ 1. [2026-10-05T20:25:56Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791231954-91c624
+    trace_id=4a2ea8acd40e4b279eae78a9020533a7 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T20:26:02Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791231954-91c624
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791231954-91c624 trace_id=4a2ea8acd40e4b279eae78a9020533a7 result_summary=- Impacted customers: Meridian Logistics (CUST-100
+ 3. [2026-10-05T20:26:02Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791231954-91c624
+    trace_id=4a2ea8acd40e4b279eae78a9020533a7 governed call via alias nemotron-super-120b: http_status=200
+ 4. [2026-10-05T20:26:02Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791231954-91c624
+    disposition=auto-resolve, decision='- Impacted customers: Meridian Logistics (CUST-1001) at SITE-DEN-12 and Northwind Retail (CUST-2087) at SITE-DEN-12 are experiencing latency and packet loss on thei
+ 5. [2026-10-05T20:26:04Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791231954-91c624
+    trace_id=dbd47c92aec840e7b571e615bdb27fa6 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T20:26:18Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791231954-91c624
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791231954-91c624 trace_id=dbd47c92aec840e7b571e615bdb27fa6 result_summary=- **Incident disposition**: Auto-resolve pending network t
+ 7. [2026-10-05T20:26:18Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791231954-91c624
+    trace_id=dbd47c92aec840e7b571e615bdb27fa6 governed call via alias nemotron-nano-9b: http_status=200
+ 8. [2026-10-05T20:26:18Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791231954-91c624
+    disposition=escalate, decision='- **Incident disposition**: Auto-resolve pending network team validation (ALM-10442 latency breach confirmed on RTR-DEN-12-CORE and RTR-PHX-04-CORE).  \n- **Action per 
+ 9. [2026-10-05T20:26:20Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791231954-91c624
+    trace_id=d20b4dd3419542588767bd3f9de7fb89 network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T20:26:26Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791231954-91c624
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791231954-91c624 trace_id=d20b4dd3419542588767bd3f9de7fb89 result_summary=- Probable root cause: Network congestion or routing in
+11. [2026-10-05T20:26:26Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791231954-91c624
+    trace_id=d20b4dd3419542588767bd3f9de7fb89 governed call via alias nemotron-super-120b: http_status=200
+12. [2026-10-05T20:26:26Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791231954-91c624
+    disposition=auto-resolve, decision='- Probable root cause: Network congestion or routing inefficiency causing elevated latency (88ms p95) and minor packet loss (0.4%) between core routers RTR-DEN-12-C

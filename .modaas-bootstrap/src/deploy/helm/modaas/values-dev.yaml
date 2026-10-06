@@ -1,0 +1,62 @@
+# -----------------------------------------------------------------------------
+# Dev overlay (kind / minikube / localstack)
+#   - registryMode=fake so operators don't call AWS
+#   - JWT verification OFF (no Keycloak in dev)
+#   - NetworkPolicy OFF
+#   - ServiceMonitor OFF
+#   - localhost image registry (run a local Docker registry)
+#   - public ingress disabled (use port-forward)
+#   - Canvas-First integrations toggled mostly OFF (no Canvas core in dev)
+#   - Bedrock guardrail mode 'off' (no Bedrock account)
+# -----------------------------------------------------------------------------
+global:
+  aws:
+    accountId: ""
+    region: us-west-2
+
+operators:
+  model:
+    image:
+      registry: localhost:5000
+      repository: aws-model-operator
+      tag: dev
+    irsaRoleArn: ""
+    registryMode: fake
+  tool:
+    image:
+      registry: localhost:5000
+      repository: aws-tool-operator
+      tag: dev
+    irsaRoleArn: ""
+    registryMode: fake
+  agent:
+    image:
+      registry: localhost:5000
+      repository: aws-agent-operator
+      tag: dev
+    irsaRoleArn: ""
+    registryMode: fake
+
+canvasIntegration:
+  ownerReferences: false
+  identityConfig: false
+  dependentApi: false
+  publishedNotification: false
+  auditLedger:
+    enabled: false
+
+registry:
+  installDefault: false
+
+bedrock:
+  guardrailDefaultMode: "off"
+
+networkPolicy:
+  enabled: false
+
+serviceMonitor:
+  enabled: false
+
+test:
+  enabled: true
+  endToEnd: false

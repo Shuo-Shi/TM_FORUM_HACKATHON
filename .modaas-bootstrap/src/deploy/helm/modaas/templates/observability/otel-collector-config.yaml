@@ -1,0 +1,134 @@
+{{- if .Values.otelCollector.enabled }}
+{{- /*
+The collector's config, in a template of its own so the collector Deployment
+can carry a checksum of it (checksum/config in otel-collector.yaml). The
+collector reads this once, at start: without the checksum a `helm upgrade`
+that changes the config leaves the running collector on the old one (measured
+2026-09-28 on a workshop event: decision records kept going to the old stream
+until a manual restart). deploy/tests/test_collector_config_rollout.py.
+
+Values are validated in otel-collector.yaml, which renders with this file.
+*/ -}}
+{{- $ev := .Values.otelCollector.evidence | default dict }}
+{{- $cw := $ev.cloudWatchLogs | default dict }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: opentelemetry-collector
+    app.kubernetes.io/component: telemetry
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 256
+      # Governance telemetry legitimately carries asset alias, caller identity and guardrail action.
+      # It must NOT carry prompt or completion CONTENT: a trace store is not an approved location for
+      # customer payloads, and a governance product that leaks the text it was asked to guard has
+      # defeated itself. Dropped at the collector so no exporter can ever receive it, rather than
+      # relying on every emitter to be careful.
+      attributes/scrub-payloads:
+        actions:
+          - key: gen_ai.prompt
+            action: delete
+          - key: gen_ai.completion
+            action: delete
+          - key: gen_ai.input.messages
+            action: delete
+          - key: gen_ai.output.messages
+            action: delete
+          - key: modaas.request.body
+            action: delete
+          - key: modaas.response.body
+            action: delete
+{{- if $ev.enabled }}
+      # a design note point 5, write integrity. `from: connection` is what makes the
+      # stamp unforgeable -- see the header comment.
+      k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        pod_association:
+          - sources:
+              - from: connection
+        extract:
+          metadata:
+            # Exactly the keys evidence/otlp.py::STAMP_KEYS checks. A key added
+            # there without adding it here yields an empty stamp and refuses
+            # every decision record; deploy/tests/test_evidence_chart.py holds
+            # the two together.
+            - k8s.namespace.name
+            - k8s.deployment.name
+            - k8s.pod.name
+      # Only evidence records reach the audit sink. `modaas.evidence.schema_version`
+      # is written by EvidenceRecord.to_attributes() and by nothing else.
+      filter/evidence-only:
+        error_mode: ignore
+        logs:
+          log_record:
+            - 'attributes["modaas.evidence.schema_version"] == nil'
+{{- end }}
+    extensions:
+      # REQUIRED: the liveness/readiness probes target :13133. Without this
+      # extension nothing listens there, the probes fail, and the kubelet
+      # SIGTERMs a collector that otherwise logged "Everything is ready".
+      health_check:
+        endpoint: 0.0.0.0:13133
+    exporters:
+      debug:
+        verbosity: basic
+{{- if and $ev.enabled (eq ($ev.exporter | default "debug") "awscloudwatchlogs") }}
+      # The AWS reference backing (a design note point 5). Option names verified
+      # 2026-09-26 against exporter/awscloudwatchlogsexporter/README.md:
+      # log_group_name and log_stream_name are the two with NO defaults;
+      # log_retention defaults to Never Expire and applies only to a group the
+      # exporter itself creates; there is no KMS option (see the
+      # modaas-evidence-sink-preconditions ConfigMap).
+      #
+      # raw_log is left at its default (false) DELIBERATELY: the exporter then
+      # serialises the whole log record ({body, attributes, resource, ...}), and
+      # `resource` is where the k8sattributes stamp lives. With raw_log: true the
+      # message would be the body alone and the stamp would be lost at rest --
+      # the reader would have nothing to check and every decision record would be
+      # inadmissible. evidence/otlp.py::decode_log_envelope reads this shape.
+      awscloudwatchlogs:
+        log_group_name: {{ $cw.logGroupName | quote }}
+        log_stream_name: {{ $cw.logStreamName | default "modaas-evidence" | quote }}
+        region: {{ required "global.aws.region must be set" .Values.global.aws.region | quote }}
+        log_retention: {{ $cw.retentionInDays | default 365 | int }}
+{{- end }}
+    service:
+      extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [attributes/scrub-payloads, batch]
+          exporters: [debug]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+{{- if $ev.enabled }}
+        # a design note point 5. NOT run through attributes/scrub-payloads: an evidence
+        # record carries no payload (identity, asset, policy, verdict), so the
+        # scrubber would be harmless today and would silently delete a future
+        # field whose name resembled a payload key.
+        logs/audit:
+          receivers: [otlp]
+          processors: [k8sattributes, filter/evidence-only, batch]
+          exporters: [{{ $ev.exporter | default "debug" }}]
+{{- end }}
+      telemetry:
+        logs:
+          level: info
+{{- end }}

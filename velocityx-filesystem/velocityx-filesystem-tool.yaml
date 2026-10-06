@@ -1,0 +1,29 @@
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  name: velocityx-filesystem
+  namespace: components
+
+spec:
+  provider: custom
+
+  toolName: velocityx-filesystem
+
+  toolType: mcp
+
+  custom:
+    protocol: mcp
+    baseUrl: http://velocityx-filesystem.components.svc.cluster.local:8080
+
+  credentialProviderType: NONE
+
+  description: VelocityX filesystem access
+
+  governance:
+    owner: velocityx-team
+
+    dataClassification: internal
+
+    approval:
+      required: true
+      requiredApprovals: 1

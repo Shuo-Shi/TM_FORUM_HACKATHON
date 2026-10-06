@@ -1,0 +1,16 @@
+CONTROL_ID        : 16
+CONTROL_NAME      : Per-run token spend cap
+RUN_ID            : fault-1791301560-77feab
+
+THRESHOLD_VERSION : AIA-COST-001-v1
+EFFECTIVE_DATE    : 2026-10-04
+OWNER             : VelocityX
+TOKEN_LIMIT       : 40000
+
+VERDICT           : PASS
+MEASURED_VALUE    : 25670
+UNIT              : tokens
+EVIDENCE_COUNT    : 6
+EVIDENCE_IDS      : 9e9fb6ad-1739-43c1-96f5-d8edb7dfe1e7, 5ecb1184-8925-46f6-bf91-c884350529c2, 5b4773c3-9bc1-48ad-9ccb-853d6f80e55f, 92751b58-8c00-4c92-87e1-e570afad95a2, 440a9b20-7553-4e4d-b2b9-86c6879f698a, 74e0da41-a1eb-4dbb-a3a2-7b144e4be73a
+VERDICT_FILE      : /home/ec2-user/evidence/verdicts/v-16-fault-1791301560-77feab-d6e0966a8fef.json
+------------------------------------------------------------------------------

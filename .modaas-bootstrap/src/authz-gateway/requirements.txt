@@ -1,0 +1,25 @@
+# HTTP surface. Matches pdp/ and ai-gateway-pod/ so one uvicorn/FastAPI behaviour
+# applies across every MoDaaS service rather than two.
+fastapi>=0.115.0
+uvicorn>=0.30.0
+
+# PDP /decide client. httpx rather than urllib because the call needs a deadline
+# checked ACROSS streamed reads: measured, urlopen(timeout=1.5) ran 51.5s and
+# httpx.Timeout(1.5) ran 15.0s against a body dripped one byte at a time. The
+# bound comes from the deadline loop in pdp_client.py, not from this pin.
+httpx>=0.27.0
+
+# STS GetAccessKeyInfo only — the one AWS call this service makes. Floor tracks
+# ai-gateway-pod/requirements.txt:11, the module identity.py ports from.
+boto3>=1.35.0
+
+# Bounded identity cache. A plain dict here is a known, already-fixed bug class
+# in this repo (AGENTS.md:227 — "any in-memory cache in a long-running operator
+# needs TTL + max-entries"); negatives are cached, so an unbounded dict grows
+# with attacker-supplied access keys. Same pattern as alias_resolver.py:25.
+cachetools>=5.5.0
+
+# Test runner. A project rule forbids a second runner alongside pytest.
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+PyJWT[crypto]==2.10.1  # W4-B: Keycloak RS256 verification (JWKS)

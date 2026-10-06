@@ -1,0 +1,16 @@
+expects   auto-resolve
+run       fault-1791236662-9e45fb
+
+  PASS  chain has records                       13 records
+  PASS  all three domains present               3 actors: customer-experience-agent, it-resolution-agent, network-resolution-agent
+  PASS  intent recorded before invocation       an agent that invokes before declaring intent leaves an unauditable gap
+  PASS  guardrail verdict on every model call   3/3 invocations carry a guardrail verdict
+  PASS  result inspected, not just produced     a result nobody checked is not evidence
+  PASS  cross-domain negotiation recorded       domains that never disagreed did not really consult each other
+  PASS  disposition recorded, not inferred      recorded: gather-evidence, gather-evidence, auto-resolve
+  PASS  disposition is auto-resolve             S1 has one cause and a protection path; the agents should act
+
+RESULT: PASS (8/8)
+
+why this scenario exists: One root cause, one reversible action, protection path available. The agents should converge and act.
+logged fault-1791236662-9e45fb

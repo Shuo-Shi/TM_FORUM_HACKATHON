@@ -1,0 +1,51 @@
+AUDIT TRAIL -- 16 records
+================================================================
+ 1. [2026-10-05T21:37:26Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791236243-830d7a
+    trace_id=2ebbfdb1f3ae477c81e2cc21be42b7c5 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T21:37:49Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791236243-830d7a
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791236243-830d7a trace_id=2ebbfdb1f3ae477c81e2cc21be42b7c5 result_summary=- Impacted customers: CUST-1001 Meridian Logistics
+ 3. [2026-10-05T21:37:49Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791236243-830d7a
+    trace_id=2ebbfdb1f3ae477c81e2cc21be42b7c5 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 4. [2026-10-05T21:37:49Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791236243-830d7a
+    disposition=gather-evidence, decision='- Impacted customers: CUST-1001 Meridian Logistics (gold) and CUST-2087 Northwind Retail (silver)  \n- How: Packet loss 0.4%, latency 88ms p95, minor latency SLO
+ 5. [2026-10-05T21:37:52Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236243-830d7a
+    trace_id=cd17ceaf8e08485ba692aba0ed01e2fb it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T21:38:05Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236243-830d7a
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236243-830d7a trace_id=cd17ceaf8e08485ba692aba0ed01e2fb result_summary=- **Incident disposition**: Gather evidence (no clear root
+ 7. [2026-10-05T21:38:05Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236243-830d7a
+    trace_id=cd17ceaf8e08485ba692aba0ed01e2fb governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 8. [2026-10-05T21:38:05Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236243-830d7a
+    disposition=gather-evidence, decision='- **Incident disposition**: Gather evidence (no clear root cause identified; evidence is ambiguous between network telemetry or customer-side factors).  \n- **Ac
+ 9. [2026-10-05T21:38:07Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791236243-830d7a
+    trace_id=5e7b381275c7472094f918642c2e4f07 network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T21:38:39Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791236243-830d7a
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791236243-830d7a trace_id=5e7b381275c7472094f918642c2e4f07 result_summary=</function=network-twin___predict_rsrp
+{"site": "RTR-DE
+11. [2026-10-05T21:38:39Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791236243-830d7a
+    trace_id=5e7b381275c7472094f918642c2e4f07 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+12. [2026-10-05T21:38:39Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791236243-830d7a
+    disposition=gather-evidence, decision='</function=network-twin___predict_rsrp\n{"site": "RTR-DEN-12-CORE"}\n{"site": "RTR-PHX-04-CORE"}\nfunction=runbook-lookup___lookup\n{"category": "scenarios", "qu
+13. [2026-10-05T21:38:42Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236243-830d7a
+    trace_id=2245af5953af4a45a8d1e060b705eeff it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+14. [2026-10-05T21:38:44Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236243-830d7a
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236243-830d7a trace_id=2245af5953af4a45a8d1e060b705eeff result_summary=- **Incident disposition**: Gather evidence to confirm roo
+15. [2026-10-05T21:38:44Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236243-830d7a
+    trace_id=2245af5953af4a45a8d1e060b705eeff governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+16. [2026-10-05T21:38:44Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236243-830d7a
+    disposition=gather-evidence, decision='- **Incident disposition**: Gather evidence to confirm root cause (transport congestion between sites is ambiguous).  \n- **Action per runbook**: No immediate ac

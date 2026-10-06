@@ -1,0 +1,206 @@
+# -----------------------------------------------------------------------------
+# Workshop overlay (AWS Workshop Studio, participant's own AWS account)
+#
+# Differs from values-dev.yaml in the one way that matters: this overlay uses
+# REAL AWS calls (registryMode=real), not the fake/mock operator path. A
+# workshop demonstrating governance enforcement needs a real Bedrock
+# guardrail actually firing, not a stub — that's the whole point.
+#
+#   - registryMode=real — operators call real AWS (Bedrock, AgentCore Registry)
+#   - JWT verification OFF initially — no Keycloak/Canvas identity wired yet
+#     by the time this overlay applies (Canvas installs first, see
+#     content/02-install-canvas/); flip on in a later module once IdentityConfig
+#     is live, do not leave this off in a long-running install
+#   - authz-gateway + agentgateway ENABLED — the v3/a design note architecture is the
+#     not representative of the current design
+#   - Image registries are ALL "" below, injected by --set at install time —
+#     see the "IMAGE REGISTRY — CORRECTED" note directly below. This
+#     replaced an earlier version of this file that defaulted every registry
+#     to public.ecr.aws/modaas. That default was WRONG: as of this workshop's
+#     authoring, public.ecr.aws/modaas has ZERO published images (verified via
+#     an unauthenticated ECR-Public anonymous-token manifest check — every
+#     one of the 6 repos returns NAME_UNKNOWN). Publishing MoDaaS's
+#     proprietary reference implementation to a maintainer-owned PUBLIC
+#     registry was explicitly rejected on review — see the workshop repo's
+#     README.md "Image build & registry" section and this repo's own
+#     AGENTS.md ownership clause (any ECR push requires explicit
+#     authorization, and a public artifact is a permanently different risk
+#     class from a private one this maintainer would then own forever).
+#   - NetworkPolicy ON — the CFT provisions the aws-vpc-cni + associated
+#     add-ons this needs; a workshop should demonstrate the real security
+#     posture, not skip it because dev skips it
+#   - ServiceMonitor OFF — no Prometheus operator installed by the CFT;
+#     participants who want observability wire it in a later, optional module
+#
+# IMAGE REGISTRY — CORRECTED (do not revert to a hardcoded public.ecr.aws
+# default without first verifying real images exist there — see above):
+#   Every *.image.registry field below is a loud placeholder, NOT an empty
+#   string, and this distinction matters: deploy/helm/modaas/templates/
+#   _helpers.tpl:86 resolves the operator images via
+#   `{{ $img.registry | default "public.ecr.aws/modaas" }}` — Sprig's
+#   `default` treats an EMPTY STRING as unset and silently falls back to the
+#   public registry regardless of what this file says (confirmed by
+#   rendering with registry:"" set here — the operator templates still
+#   emitted public.ecr.aws/modaas/... while authz-gateway/pdp, whose
+#   templates reference .Values directly with no `default`, correctly
+#   emitted nothing useful). An empty string here would therefore silently
+#   succeed against a registry with zero real images instead of failing
+#   loudly. The placeholder below MUST be overridden at `helm install` time
+#   via --set with the participant's OWN private ECR, built by the
+#   workshop's CFT (static/cfn/01-eks-cluster.yaml provisions 6 ECR repos +
+#   a CodeBuild project that clones modaas-aigateway at a PINNED tag — see
+#   that template's ModaasSourceVersion parameter — and builds/pushes each
+#   image). Lab 2's step reads the CFT's Ecr*Uri outputs and passes them as
+#   --set operators.model.image.registry=<value from EcrModelOperatorUri,
+#   minus the trailing /repo-name>, etc. Same pattern already used for
+#   irsaRoleArn and global.aws.accountId — dynamic, per-participant, never
+#   committed as a real value to this file.
+#
+#   ⚠️ CORRECTED 2026-08-31 — the paragraph above described the wrong split
+#   and shipped a real bug. `registry` and `repository` are TWO SEPARATE
+#   fields that _helpers.tpl unconditionally joins:
+#       printf "%s/%s:%s" $registry $repository $tag
+#   The CFT's Ecr*Uri outputs are COMPLETE push targets that already contain
+#   the repo name, so passing one as `registry` while `repository` keeps its
+#   default below doubles the path —
+#   and every one of the 6 images fails to pull with NotFound. Verified by
+#   `helm template` before and after.
+#
+#   The CORRECT split, which Lab 2 now uses:
+#       --set <component>.image.registry=<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com
+#       --set <component>.image.repository=<STACK_NAME>-<repo short name>
+#   i.e. `registry` is the bare ECR HOST with no path segment, and
+#   `repository` is the CFT-created repo's real name, which is
+#   stack-name-prefixed (static/cfn/01-eks-cluster.yaml names them
+#   !Sub "${AWS::StackName}-aws-model-operator" and so on). The `repository`
+#   defaults below are the UNPREFIXED short names and are therefore ALWAYS
+#   wrong for a real deployment — they must be overridden too, not just
+#   `registry`. Do not reintroduce the "minus the trailing /repo-name"
+#   guidance; that is the bug.
+#
+# ACCOUNT-ID HYGIENE (read before editing this file):
+#   global.aws.accountId is intentionally "" here. It MUST stay empty in any
+#   commit to this file. Workshop Studio / the bootstrap script injects the
+#   participant's own account ID at install time via --set or a values
+#   override that is NEVER committed. If you find yourself typing a 12-digit
+#   number into this file, stop — that is the account-ID leak this file exists
+#   to prevent (see the sibling values-v3.yaml / values-<cluster>.yaml, which
+#   intentionally do carry a real account ID because they are NOT meant for
+#   distribution). The image.registry fields below carry the SAME rule: they
+#   embed an account ID once resolved, so they must NEVER be filled in with a
+#   real value in this committed file either — leave them "" like accountId.
+# -----------------------------------------------------------------------------
+global:
+  aws:
+    accountId: ""    # DO NOT fill in — injected by the bootstrap script at install time
+    region: ""  # REQUIRED -- the documented install passes --set-string global.aws.region=$REGION
+
+operators:
+  model:
+    image:
+      registry: "REPLACE_ME_ECR_MODEL_OPERATOR"       # bootstrap script sets this from the CFT's EcrModelOperatorUri output. Deliberately NOT "" — see IMAGE REGISTRY note above (Sprig's default() ignores empty strings and would silently fall back to public.ecr.aws/modaas)
+      repository: aws-model-operator
+      tag: ""          # injected by the bootstrap script — the resolved commit SHA the CodeBuild project tagged the image with
+    irsaRoleArn: ""    # injected by the bootstrap script — the CFT-created IRSA role ARN
+    registryMode: real
+  tool:
+    image:
+      registry: "REPLACE_ME_ECR_TOOL_OPERATOR"       # bootstrap script sets this from the CFT's EcrToolOperatorUri output
+      repository: aws-tool-operator
+      tag: ""
+    irsaRoleArn: ""
+    registryMode: real
+  agent:
+    image:
+      registry: "REPLACE_ME_ECR_AGENT_OPERATOR"       # bootstrap script sets this from the CFT's EcrAgentOperatorUri output
+      repository: aws-agent-operator
+      tag: ""
+    irsaRoleArn: ""
+    registryMode: real
+    # Workshop only (owner, 2026-09-28): AgentCore-hosted agents get the event's
+    # gateway key as a literal, read from gatewayCredential.secretName. Per-agent
+    # Keycloak clients are the production path.
+    agentCoreGatewayCredential: sharedKey
+
+authzGateway:
+  enabled: true             # the v3 architecture this workshop teaches — see Chart.yaml notes
+  image:
+    registry: "REPLACE_ME_ECR_AUTHZ_GATEWAY"       # bootstrap script sets this from the CFT's EcrAuthzGatewayUri output. This template (authz-gateway/deployment.yaml) reads .Values directly with no Sprig default(), so it would have honored "" correctly — kept as the same loud sentinel for consistency across all 6 images.
+    repository: authz-gateway
+    tag: ""            # was "latest" — corrected to match the CodeBuild project's content-addressed SHA tag, injected by the bootstrap script
+  irsaRoleArn: ""           # left empty on purpose (G55): the workshop cluster has no
+                            # OIDC provider and the installer used to pass the EKS
+                            # node role here, which only produced InvalidIdentityToken.
+                            # In `reject` mode below the gateway makes no AWS call.
+  # D1 (owner, 2026-09-26): SigV4 is refused at identity on the workshop
+  # platform. `account` mode admits an unverified signature as an
+  # ACCOUNT_RESOLVED identity and leaves Cedar's default-deny as the only
+  # stop -- measured live as requirement R8 failing on events ed19ec75 and
+  # 3b1b4424. Every workshop caller is a Keycloak JWT or an issued API key.
+  sigv4IdentityMode: "reject"
+
+pdp:
+  enabled: true             # authz-gateway's dependency (a design note) — must ship together
+  image:
+    registry: "REPLACE_ME_ECR_PDP"       # bootstrap script sets this from the CFT's EcrPdpUri output
+    repository: pdp
+    digest: ""
+
+
+canvasIntegration:
+  ownerReferences: true     # ODA Canvas is installed first in this workshop (unlike dev)
+  identityConfig: true
+  dependentApi: true
+  publishedNotification: true
+  auditLedger:
+    enabled: true
+
+registry:
+  installDefault: true
+
+bedrock:
+  guardrailDefaultMode: "enforce"   # real enforcement — the participant's own account has Bedrock access
+
+networkPolicy:
+  enabled: true
+
+serviceMonitor:
+  enabled: false
+
+test:
+  enabled: true
+  endToEnd: false
+
+# agentgateway subcharts (OCI, Linux Foundation). Default OFF -- the documented
+# path installs them as standalone releases first. Enable only for all-in-one.
+agentgatewaySubchart:
+  enabled: false
+
+# Operator-programmed agentgateway routes (AgentgatewayModel per approved CR).
+# ON by default: agentgateway is the sole dataplane, so an approved model that
+# programs no route would be served by nothing.
+agentgatewayRoutes:
+  enabled: true
+  namespace: agentgateway-system
+  gateway: modaas-agw
+
+
+# The evidence pipeline (a design note), on for the workshop only. authz-gateway
+# writes a decision record for every governed call; the collector stamps each
+# with its source pod and ships it to CloudWatch Logs, which is the per-team
+# evidence store the hackathon asks the lab for. Measured on event b0525231,
+# 2026-09-28: records arrived within seconds of the call.
+#
+# The group name is fixed because each team has its own account and one
+# cluster. The workshop's CloudFormation template creates this group and the
+# collector's writer role, and associates that role with the collector's
+# service account (modaas-system/modaas-otel-collector) by Pod Identity; this
+# cluster has no OIDC provider, so irsaRoleArn stays empty.
+otelCollector:
+  enabled: true
+  evidence:
+    enabled: true
+    exporter: awscloudwatchlogs
+    cloudWatchLogs:
+      logGroupName: /modaas/evidence
+      retentionInDays: 30

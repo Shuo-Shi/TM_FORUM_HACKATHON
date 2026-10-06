@@ -1,0 +1,89 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AgentCoreRuntimeDiscoveryRO",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:ListAgentRuntimes"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "${OPERATOR_REGION}"
+        }
+      }
+    },
+    {
+      "Sid": "AgentCoreRuntimeCRUD",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:CreateAgentRuntime",
+        "bedrock-agentcore:GetAgentRuntime",
+        "bedrock-agentcore:UpdateAgentRuntime",
+        "bedrock-agentcore:DeleteAgentRuntime",
+        "bedrock-agentcore:InvokeAgentRuntime"
+      ],
+      "Resource": [
+        "arn:aws:bedrock-agentcore:${OPERATOR_REGION}:${ACCOUNT_ID}:agent-runtime/*"
+      ]
+    },
+    {
+      "Sid": "AgentRegistryRecordWrite",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:CreateRegistryRecord",
+        "bedrock-agentcore:UpdateRegistryRecord",
+        "bedrock-agentcore:UpdateRegistryRecordStatus",
+        "bedrock-agentcore:SubmitRegistryRecordForApproval",
+        "bedrock-agentcore:GetRegistryRecord",
+        "bedrock-agentcore:DeleteRegistryRecord",
+        "agent-registry:CreateRegistryRecord",
+        "agent-registry:UpdateRegistryRecord",
+        "agent-registry:UpdateRegistryRecordStatus",
+        "agent-registry:SubmitRegistryRecordForApproval",
+        "agent-registry:GetRegistryRecord",
+        "agent-registry:DeleteRegistryRecord",
+        "agent-registry:SearchDiscoverableRegistryRecords",
+        "agent-registry:ListDiscoverableRegistryRecords"
+      ],
+      "Resource": [
+        "arn:aws:bedrock-agentcore:${OPERATOR_REGION}:${ACCOUNT_ID}:registry/*/record/*",
+        "arn:aws:agent-registry:${OPERATOR_REGION}:${ACCOUNT_ID}:registry/*/record/*"
+      ]
+    },
+    {
+      "Sid": "IamRoleInspectionRO",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListRolePolicies",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:SimulatePrincipalPolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::${ACCOUNT_ID}:role/*",
+        "arn:aws:iam::${ACCOUNT_ID}:policy/*"
+      ]
+    },
+    {
+      "Sid": "PassRoleToAgentRuntime",
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::${ACCOUNT_ID}:role/*-runtime-role",
+        "arn:aws:iam::${ACCOUNT_ID}:role/modaas-*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "bedrock-agentcore.amazonaws.com"
+        }
+      }
+    }
+  ]
+}

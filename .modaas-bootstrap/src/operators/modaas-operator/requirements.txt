@@ -1,0 +1,10 @@
+# a design note Mechanism 2: exact AWS SDK versions live in ONE file, referenced here.
+# pip resolves this path relative to THIS requirements.txt, so the operator's
+# build context carries a copy refreshed by build-and-push.sh (drift-guarded by
+# operators/shared/tests/test_sdk_pin_discipline.py). A floor alone let the image
+# and the test venv straddle the botocore release that moved the Registry API.
+-c constraints/aws-sdk.txt
+kopf>=1.37.0
+kubernetes>=29.0.0
+boto3>=1.40.0
+botocore>=1.40.0

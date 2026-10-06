@@ -1,0 +1,146 @@
+{{- if .Values.evidenceService.enabled }}
+{{- /*
+The fronted route (a design note point 5, owner 2026-09-26: "should we not front it
+audit-store we shows in workshop instruction to approvers").
+
+    approver ->  Gateway modaas-agw, listener `http` (:8080)
+             ->  HTTPRoute /evidence  ->  ext_authz hook (modaas-authz)
+             ->  Service modaas-evidence:8080
+
+## Why this route carries its OWN AgentgatewayPolicy
+
+The listener-scoped hook policy (deploy/agentgateway/agentgatewaypolicy-authz-hook.yaml)
+already covers listener `http`, so routing here would cross a hook either way. It
+is not sufficient: evidence-service takes the caller's attested principal from a
+REQUEST header, and on this hook protocol the only config-only way to put one there
+is `allowedResponseHeaders` -- the hook copies those from the authz ALLOW response
+into the upstream request (`ext_authz.rs:835-873`).
+
+Adding that to the LISTENER policy would copy the headers into every governed call
+on `llm` and `http`, including the Bedrock path whose request the dataplane
+SigV4-signs. Adding headers to a request whose signature is computed elsewhere is a
+risk worth not taking for a benefit no LLM backend wants.
+
+Upstream makes the narrower attachment work, verified in the pinned source rather
+than assumed:
+
+  * `PolicyTarget::Route` exists (`crates/agentgateway/src/types/agent.rs:2571-2576`),
+    so a policy may target an HTTPRoute.
+  * route-scoped traffic rules are chained AFTER gateway/listener rules
+    (`crates/agentgateway/src/store/binds.rs:960`), and
+  * ExtAuthz merges by REPLACEMENT (`crates/agentgateway/src/store/policy.rs:278-284`,
+    `*self = policy.clone()`).
+
+So this policy overrides the listener's for this route and for nothing else.
+
+## Why there is no URLRewrite
+
+The hook sees the ORIGINAL path and derives the evidence read/write policy id from
+it (authz-gateway/app.py, EVIDENCE_PREFIX). A rewrite filter would introduce an
+ordering dependency between the hook and the filter; evidence-service strips the
+prefix itself instead (`app._strip_prefix`), which also keeps it debuggable through
+a direct port-forward.
+*/ -}}
+{{- $ns := .Values.global.namespace | default "modaas-system" }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: modaas-evidence
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: modaas-evidence
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.evidenceService.gateway.name | default "modaas-agw" }}
+      namespace: {{ .Values.evidenceService.gateway.namespace | default "agentgateway-system" }}
+      # The `http` listener, not `llm`: `llm` allows only AgentgatewayModel routes
+      # (see deploy/agentgateway/gateway-modaas-agw.yaml -- an HTTPRoute there
+      # would report attachedRoutes 0 and answer 404).
+      sectionName: {{ .Values.evidenceService.gateway.listener | default "http" }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /evidence
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: modaas-evidence
+          port: 8080
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: modaas-evidence-authz
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: modaas-evidence
+  traffic:
+    extAuth:
+      backendRef:
+        kind: Service
+        name: modaas-authz
+        namespace: {{ $ns }}
+        port: 8080
+      # An unauthenticated read must be REFUSED, not passed through. FailOpen here
+      # would reopen the exact gap a design note closes (workshop a hardening note: the ledger's reads
+      # were unauthenticated).
+      failureMode: FailClosed
+      forwardBody:
+        # A participant's POST /records body is what the hook decides against for
+        # the write policy, and 256Ki matches the listener policy so one body bound
+        # applies across the perimeter.
+        maxSize: 256Ki
+      http:
+        # REPLACES the hook's default rather than adding to it, same as the
+        # listener policy. The list and the reasons are declared once in
+        # authz-gateway/hook_contract.py; deploy/tests/test_evidence_chart.py and
+        # authz-gateway/tests/test_hook_policy_contract.py both check this copy
+        # against it.
+        allowedRequestHeaders:
+          - authorization
+          - x-amz-date
+          - x-amz-content-sha256
+          - x-amz-security-token
+          - traceparent
+          - baggage
+        # The reason this route needs its own policy: these are copied from the
+        # authz ALLOW response into the UPSTREAM REQUEST, which is how the attested
+        # principal reaches evidence-service. It reads the principal from a header
+        # and never from the body -- a body field would be the workshop ledger
+        # again, with attribution set to whatever the writer typed.
+        allowedResponseHeaders:
+          - x-modaas-principal
+          - x-modaas-action-id
+          - x-modaas-trace-id
+        # The client-facing half, same two hops as the listener policy: lift the
+        # ids out of the authz response into the `extauthz` CEL variable, then set
+        # the client headers from it in the response transformation below. A
+        # missing header fails CEL with NoSuchKey and the key is dropped, so a
+        # caller that sent no traceparent gets NO x-modaas-trace-id rather than a
+        # fabricated one.
+        responseMetadata:
+          traceId: 'response.headers["x-modaas-trace-id"]'
+          actionId: 'response.headers["x-modaas-action-id"]'
+          correlationId: 'response.headers["x-modaas-correlation-id"]'
+    transformation:
+      response:
+        # An ARRAY of {name, value}: the pinned 1.4.1 CRD refuses the map form
+        # (strict decoding). deploy/tests/test_evidence_chart.py validates this
+        # rendered object against that CRD.
+        set:
+          - name: x-modaas-trace-id
+            value: 'extauthz.traceId'
+          - name: x-modaas-action-id
+            value: 'extauthz.actionId'
+          - name: x-modaas-correlation-id
+            value: 'extauthz.correlationId'
+{{- end }}

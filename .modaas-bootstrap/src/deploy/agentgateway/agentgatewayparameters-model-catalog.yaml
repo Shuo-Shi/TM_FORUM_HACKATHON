@@ -1,0 +1,20 @@
+# U10 (usage-and-cost): wires the model-cost-catalog ConfigMap into
+# agentgateway's native cost/usage pipeline (crates/agentgateway/src/llm/
+# cost/mod.rs -- unmodified; this is configuration, not new capability).
+#
+# Gateway-level only -- AgentgatewayParameters.spec.modelCatalog is ignored
+# on GatewayClass-level parameters (the CRD's own schema description),
+# because ConfigMap references resolve relative to the Gateway's deployment
+# namespace. Referenced from gateway-modaas-agw.yaml's
+# spec.infrastructure.parametersRef.
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayParameters
+metadata:
+  name: modaas-agw-params
+  namespace: agentgateway-system
+spec:
+  modelCatalog:
+    sources:
+      - configMap:
+          name: modaas-model-cost-catalog
+          key: catalog.json

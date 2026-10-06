@@ -1,0 +1,96 @@
+{
+  "run_id": "fault-1791302598-aac3b9",
+  "note": "No dedicated OTEL trace backend on this platform build (the collector exports to debug only, see Module 8). This file carries the audit ledger's own correlated chain instead, joined on trace_id/action_id inside each record's detail.",
+  "records": [
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 1,
+      "phase": "intent",
+      "actor": "customer-experience-agent",
+      "detail": "trace_id=70ab5faae9044153bb32320b03339f60 customer analysis via governed model 'nemotron-super-120b'; tool customer-records",
+      "trace_id": "70ab5faae9044153bb32320b03339f60",
+      "ts": "2026-10-06T16:03:21Z",
+      "seq": 1791302601127
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 1.5,
+      "phase": "tool-invocation",
+      "actor": "customer-experience-agent",
+      "detail": "actor=customer-experience-agent tool=customer-records correlation_id=fault-1791302598-aac3b9 trace_id=70ab5faae9044153bb32320b03339f60 result_summary=- Impacted customers: Meridian Logistics (CUST-1001), Aurora Health Group (CUST-1002), Northwind Retail (CUST-2087), Summit Energy (CUST-4455), Pacific Transit Authority (CUST-6201) \u2013 all at SITE-DEN-",
+      "trace_id": "70ab5faae9044153bb32320b03339f60",
+      "ts": "2026-10-06T16:03:27Z",
+      "seq": 1791302607204
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 2,
+      "phase": "invocation",
+      "actor": "customer-experience-agent",
+      "detail": "trace_id=70ab5faae9044153bb32320b03339f60 governed call via alias nemotron-super-120b: http_status=200",
+      "trace_id": "70ab5faae9044153bb32320b03339f60",
+      "ts": "2026-10-06T16:03:27Z",
+      "seq": 1791302607209
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 3,
+      "phase": "result-inspection",
+      "actor": "customer-experience-agent",
+      "detail": "disposition=undetermined, stop_reason=end_turn, decision='- Impacted customers: Meridian Logistics (CUST-1001), Aurora Health Group (CUST-1002), Northwind Retail (CUST-2087), Summit Energy (CUST-4455), Pacific Transit Authority (CUST-6201) \u2013 all at SITE-DEN-12.\n- How: Packet loss (4.2%) and elevated latency (31ms p95) on element DU-DEN-12-A affecting 5G-SLICE-EDGE-04 service; open complaints cite intermittent latency spikes, telemetry packet loss, POS terminal outages, and fleet tracking degradation.\n- What to tell them: We are investigating a packet loss alarm (ALM-9931) on DU-DEN-12-A impacting your 5G edge slice; updates will follow as we restore service. Please monitor for intermittent connectivity and report any persistent issues.'",
+      "trace_id": "70ab5faae9044153bb32320b03339f60",
+      "ts": "2026-10-06T16:03:27Z",
+      "seq": 1791302607215
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 4,
+      "phase": "intent",
+      "actor": "it-resolution-agent",
+      "detail": "trace_id=4060ee3677c94f77b634f6b39c3a8144 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup",
+      "trace_id": "4060ee3677c94f77b634f6b39c3a8144",
+      "ts": "2026-10-06T16:03:29Z",
+      "seq": 1791302609746
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 5,
+      "phase": "invocation",
+      "actor": "it-resolution-agent",
+      "detail": "trace_id=4060ee3677c94f77b634f6b39c3a8144 governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed",
+      "trace_id": "4060ee3677c94f77b634f6b39c3a8144",
+      "ts": "2026-10-06T16:04:04Z",
+      "seq": 1791302644125
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 6,
+      "phase": "result-inspection",
+      "actor": "it-resolution-agent",
+      "detail": "disposition=gather-evidence, decision='- **Incident disposition**: Undetermined (no runbook match for ALM-9931 packet loss DU-DEN-12-A; evidence is ambiguous between hardware failure or network congestion).  \n- **Action**: Apply temporary mitigation (e.g., reduce traffic on DU-DEN-12-A or reroute flows) pending root cause confirmation.  \n- **Network team needs**: Immediate telemetry on DU-DEN-12-A (packet loss trends, latency spikes) to distinguish between hardware degradation or congestion.  \n\nDISPOSITION: gather-evidence'",
+      "trace_id": "4060ee3677c94f77b634f6b39c3a8144",
+      "ts": "2026-10-06T16:04:04Z",
+      "seq": 1791302644132
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 7,
+      "phase": "intent",
+      "actor": "network-resolution-agent",
+      "detail": "trace_id=6e201e07c0794b21a546908bfffc75e4 network analysis via governed model 'nemotron-super-120b'; tool network-twin",
+      "trace_id": "6e201e07c0794b21a546908bfffc75e4",
+      "ts": "2026-10-06T16:04:06Z",
+      "seq": 1791302646675
+    },
+    {
+      "correlation_id": "fault-1791302598-aac3b9",
+      "step": 8,
+      "phase": "invocation",
+      "actor": "network-resolution-agent",
+      "detail": "trace_id=6e201e07c0794b21a546908bfffc75e4 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed",
+      "trace_id": "6e201e07c0794b21a546908bfffc75e4",
+      "ts": "2026-10-06T16:04:20Z",
+      "seq": 1791302660566
+    }
+  ]
+}

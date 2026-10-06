@@ -1,0 +1,76 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-agent-operator
+  namespace: modaas-system
+  labels:
+    app.kubernetes.io/name: aws-agent-operator
+    app.kubernetes.io/part-of: modaas-canvas
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aws-agent-operator
+rules:
+  # KOPF peering
+  - apiGroups: ["kopf.dev"]
+    resources: ["clusterkopfpeerings"]
+    verbs: ["list", "watch", "patch", "get", "create"]
+  # K8s events
+  - apiGroups: ["", "events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch", "get"]
+  # CRD discovery
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["list", "watch", "get"]
+  # AgentConfig + cross-asset reads (ModelConfig, ToolConfig for dependency validation)
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["agentconfigs", "agentconfigs/status", "modelconfigs", "modelconfigs/status", "toolconfigs", "toolconfigs/status"]
+    verbs: ["list", "watch", "get", "patch", "update", "create", "delete"]
+  # Namespaces (for namespace-scoped watching)
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list", "watch", "get"]
+  # W1.B — Canvas TMF CRD emission (components, identityconfigs, dependentapis, publishednotifications)
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["components", "components/status"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["identityconfigs", "identityconfigs/status"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["dependentapis", "dependentapis/status"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["publishednotifications", "publishednotifications/status"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # W1.B — Istio CRD emission (per-asset routing, authz, egress, telemetry)
+  - apiGroups: ["networking.istio.io"]
+    resources: ["virtualservices", "serviceentries", "sidecars", "destinationrules"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["security.istio.io"]
+    resources: ["authorizationpolicies", "peerauthentications", "requestauthentications"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["telemetry.istio.io"]
+    resources: ["telemetries"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # 2026-05-27 fix — Istio LB DNS auto-resolution (a design note layer 2).
+  # See aws-model-operator/k8s/rbac.yaml for rationale.
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aws-agent-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aws-agent-operator
+subjects:
+  - kind: ServiceAccount
+    name: aws-agent-operator
+    namespace: modaas-system

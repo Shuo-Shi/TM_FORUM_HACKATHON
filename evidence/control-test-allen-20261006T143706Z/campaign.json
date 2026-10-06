@@ -1,0 +1,12 @@
+{
+  "campaign": "control-test_Allen",
+  "started_at_utc": "2026-10-06T14:37:06Z",
+  "runs_per_scenario": 1,
+  "total_planned_runs": 3,
+  "controls": "7 9 16",
+  "register": "/home/ec2-user/starter/register.yaml",
+  "register_sha256": "6c6ae7b328e9a4b43a28b2429bce773956b09416fe32662933da08a7353d3329",
+  "runner": "/tmp/run-reference.sh",
+  "evaluator": "/home/ec2-user/starter/evaluate_revB.py",
+  "max_model_calls": 10
+}

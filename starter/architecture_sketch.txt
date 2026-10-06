@@ -1,0 +1,58 @@
+                 TELECOM FAULT-RESOLUTION DEMO
+              Level 1 foundation + control evidence
+
+  Workshop Studio scenario runner
+  S1 clear fault | S2 ambiguous fault | S3 restricted change
+                         |
+                         v
+       +-------------------------------------------+
+       | Three AgentCore agents                    |
+       | Customer Experience | IT | Network        |
+       | Network proposal -> IT negotiation        |
+       +---------------------+---------------------+
+                             |
+                   model and tool requests
+                             v
+       +-------------------------------------------+
+       | MoDaaS gateway: IN THE EXECUTION PATH     |
+       | Governed model/tool routes and controls   |
+       +-----------+-------------------+-----------+
+                   |                   |
+                   v                   v
+          NVIDIA model via AWS    Governed tools
+          Bedrock / guardrail     Customer records
+                                 Runbook lookup
+                                 Network twin
+                   |                   |
+                   +---------+---------+
+                             |
+                    run ID / trace ID
+                             v
+       +-------------------------------------------+
+       | Evidence sources                          |
+       | Audit ledger: agent intent, invocation,   |
+       | negotiation, pull-evidence.sh             |
+       | Gateway log: model and tool calls, tokens |
+       +---------------------+---------------------+
+                             |
+                             v
+       +-------------------------------------------+
+       | Exported evidence archive                 |
+       | Raw records for each named run            |
+       +---------------------+---------------------+
+                             |
+             dated register.yaml: limits and versions
+                             |
+                             v
+       +-------------------------------------------+
+       | control-test / evaluate.py                |
+       | POST-RUN EVALUATION, NOT INLINE ENFORCEMENT|
+       | Control 7: recording coverage             |
+       | Control 9: drift against baseline         |
+       | Control 16: token spend cap                |
+       +---------------------+---------------------+
+                             |
+                             v
+          PASS / BREACH / NO EVIDENCE
+          + measured value + threshold version
+          + run ID + supporting record IDs

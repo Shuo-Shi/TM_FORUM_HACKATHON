@@ -1,0 +1,61 @@
+# Closes the BYPASS CLASS (G09). Measured open: an ordinary pod in `components` reached
+# bedrock-runtime.us-west-2.amazonaws.com directly (404 = endpoint reached) and example.com (200), with
+# ZERO NetworkPolicies in the namespace. So any agent that simply chose not to use the gateway bypassed
+# MoDaaS entirely, and every governance control with it.
+#
+# The Istio ServiceEntry egress-aws-bedrock-us-west-2 does NOT close this: a ServiceEntry is an ALLOW
+# declaration for mesh egress, not a block, and with no istio-proxy sidecars in this cluster (see G19a) it
+# is inert regardless.
+#
+# NetworkPolicy is CIDR/selector-based and cannot match a DNS name, so provider egress cannot be
+# denied by hostname. The only sound construction is DEFAULT-DENY egress with an explicit allowlist:
+# DNS, the two gateways, and intra-namespace. Everything else — including every AWS API endpoint — is
+# then unreachable except through a governed dataplane.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: components-egress-governed-only
+  namespace: components
+  labels:
+    app.kubernetes.io/part-of: modaas-canvas
+    modaas.io/control: bypass-prevention
+spec:
+  podSelector: {}          # every pod in the namespace
+  policyTypes: [Egress]
+  egress:
+    # DNS. Without this nothing resolves and the namespace is bricked rather than governed.
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: {{ .Values.global.canvasNamespace }}}
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: {{ .Values.agentgatewayRoutes.namespace | default "agentgateway-system" }}}
+    # istiod, for the sidecar's certificate. WITHOUT THIS, NO NEW POD IN THIS
+    # NAMESPACE EVER BECOMES READY: istio-proxy cannot reach istiod to sign its
+    # CSR, so it never warms a workload certificate and its startup probe fails
+    # forever. Existing pods keep running on certificates they already hold,
+    # which is why enabling enforcement looks harmless right up until the next
+    # deploy -- found 2026-09-08 when three agent pods rolled to a new image
+    # and stuck at 1/2 with "failed to sign CSR: Unavailable". A participant
+    # deploying their own agent would hit this on their first try.
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: istio-system}
+      ports:
+        - {protocol: TCP, port: 15012}   # istiod XDS + CA (SDS certificates)
+        - {protocol: TCP, port: 15010}   # plaintext XDS, older sidecar config
+        - {protocol: TCP, port: 443}     # istiod webhook/validation endpoint
+    # The PDP and operators, for assets that consult policy directly.
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: {{ .Values.global.namespace }}}
+    # Intra-namespace, so co-located components can still talk.
+    - to:
+        - podSelector: {}
+    # NOTE: no 0.0.0.0/0 rule. That omission IS the control.

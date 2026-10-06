@@ -1,0 +1,149 @@
+# authz-gateway — the ext_authz backend for Gateway/modaas-agw listener `llm`.
+#
+# Namespace: modaas-system, with the PDP it calls on every request and the
+# operators it shares governance semantics with -- NOT agentgateway-system, which
+# holds the vendor's controller and dataplane. The AgentgatewayPolicy must live
+# there instead (targetRefs requires same-namespace co-location with the
+# Gateway), so this one unit spans two namespaces by the CRD's design.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modaas-authz
+  namespace: modaas-system
+  labels: { app.kubernetes.io/name: modaas-authz, app.kubernetes.io/part-of: modaas }
+spec:
+  # >=2 so a rolling restart never empties every STS cache at once. A restart
+  # loses only that cache -- but losing it degrades every caller to `structural`
+  # until it refills, so the count is a correctness property, not just HA.
+  replicas: 2
+  selector: { matchLabels: { app.kubernetes.io/name: modaas-authz } }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # The hook fails closed, so a moment with zero ready replicas is a moment
+      # of REFUSED governed traffic. Surge before terminating.
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: modaas-authz, app.kubernetes.io/part-of: modaas }
+    spec:
+      serviceAccountName: modaas-authz          # IRSA; one permission
+      # Copied from the live ai-gateway Deployment, not invented (DA-1):
+      # hard hostname constraint so two replicas never share a node; soft zone
+      # constraint because modaas-v3's node group spans only two AZs with an
+      # asymmetric 2:1 split, so a hard zone constraint would become jointly
+      # infeasible with the hard hostname constraint above minReplicas.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector: { matchLabels: { app.kubernetes.io/name: modaas-authz } }
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: { matchLabels: { app.kubernetes.io/name: modaas-authz } }
+      containers:
+        - name: authz
+          image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/modaas/authz-gateway:latest
+          ports: [{ containerPort: 8080 }]
+          env:
+            # The four knobs that feed one memory calculation. loop/verify/G60.sh
+            # checks the limit below against this arithmetic.
+            - { name: MAX_IN_FLIGHT,     value: "32" }
+            - { name: LIMIT_CONCURRENCY, value: "128" }
+            - { name: CACHE_MAX_ENTRIES, value: "5000" }
+            - { name: STS_EXECUTOR_SIZE, value: "32" }
+            # Under the hook's 1900ms backend timeout, so THIS service's deadline
+            # fires first and can attach a reason. If the hook wins the race the
+            # refusal is a bare 403 with none (RL-7).
+            - { name: REQUEST_BUDGET_S,  value: "1.75" }
+            # Whether an UNVERIFIED SigV4 header counts as identity. `account`
+            # is today's behaviour; `reject` refuses every SigV4 caller at
+            # identity (a design note point 3). Written explicitly so a code-default
+            # change cannot flip this deployment's posture silently. Keep in step
+            # with deploy/helm/modaas/values.yaml authzGateway.sigv4IdentityMode.
+            - { name: SIGV4_IDENTITY_MODE, value: "account" }
+            - { name: AWS_REGION,        value: "us-west-2" }
+            - { name: PDP_URL,           value: "http://modaas-pdp.modaas-system.svc.cluster.local:8080" }
+          resources:
+            # DERIVED, not chosen: 32x256KBx4.6 + 128x160KB + 5000x400B +
+            # 32x38KB + ~60MB base = ~120MB. The limit is ~3x that because every
+            # input is a small number of measurements, and it matches the PDP's
+            # so two services on one request path are comparable.
+            requests: { cpu: 100m, memory: 192Mi }
+            limits:   { cpu: 500m, memory: 384Mi }
+          readinessProbe:
+            # NO dependency check. A probe touching STS or /decide would evict
+            # every replica on a dependency blip, converting AR-6's deliberate
+            # DEGRADATION into a total governed-traffic stop (SR-9/RD-3).
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modaas-authz
+  namespace: modaas-system
+spec:
+  type: ClusterIP        # the dataplane is the only caller, and it is in-cluster
+  selector: { app.kubernetes.io/name: modaas-authz }
+  ports: [{ port: 8080, targetPort: 8080, name: http }]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: modaas-authz
+  namespace: modaas-system
+  annotations:
+    # IRSA. One action: sts:GetAccessKeyInfo. Resource "*" is the only
+    # expressible form -- IAM defines no resource ARN for that operation -- and
+    # it returns only the account id a key belongs to.
+    eks.amazonaws.com/role-arn: arn:aws:iam::111122223333:role/MoDaaSV3AuthzGateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: modaas-authz
+  namespace: modaas-system
+spec:
+  # A consistency fix, not a new pattern: canvas-system/ai-gateway already has a
+  # minAvailable:1 PDB shipped by this same Helm release. Without it, a voluntary
+  # eviction taking both replicas stops governed traffic, because the hook fails
+  # closed.
+  minAvailable: 1
+  selector: { matchLabels: { app.kubernetes.io/name: modaas-authz } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: modaas-authz
+  namespace: modaas-system
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: modaas-authz }
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 65 } }
+  behavior:
+    # Immediate but bounded scale-up: no more than the smaller of 100% or two
+    # pods per minute. Caller-identity and PDP timeouts never drive scale-out
+    # because replicas don't repair a dependency (DA-1).
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - { type: Percent, value: 100, periodSeconds: 60 }
+        - { type: Pods, value: 2, periodSeconds: 60 }
+      selectPolicy: Min
+    # Scale-down waits ten minutes and removes at most one pod per five
+    # minutes, preserving warm identity caches.
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - { type: Pods, value: 1, periodSeconds: 300 }

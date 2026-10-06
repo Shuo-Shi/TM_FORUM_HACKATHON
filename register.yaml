@@ -1,0 +1,36 @@
+controls:
+  - control_id: "16"
+    name: "Per-run token spend cap"
+    metric: "sum(gen_ai.usage.input_tokens + gen_ai.usage.output_tokens) over every listener=llm gateway line sharing one modaas.run_id, deduplicated by modaas.action_id"
+    observation_limit: 39000
+    exception_tolerance: 0
+    measurement_basis: "Limit = median of 3 S1 calibration runs (33238, 38108, 47821 tokens) measured 2026-10-05 before this register was dated, rounded up to the next 1000. Calibration runs are not assessed runs"
+    evidence_source: "~/evidence/archive/gateway.log and ~/evidence/gateway-log.json"
+    owner: "Afif Mazhar"
+    version: "G-16-v1"
+    version_date: "2026-10-05"
+    enforcement_point: "evaluate.py post-hoc on the archived gateway log. Inline pre-call check is planned, see gap-list"
+
+  - control_id: "7"
+    name: "Event recording coverage"
+    metric: "fraction of 12 checks passed per run: intent, invocation and result-inspection recorded for each of 3 agents (9 checks), a guardrail verdict on every invocation record, a cross-domain negotiation record, and every action_id claimed in the ledger found in the gateway log"
+    observation_limit: 1.0
+    exception_tolerance: 0
+    measurement_basis: "audit-store records for the correlation_id joined to the archived gateway log on modaas.run_id and action_id. Mirrors the score-run.py evidence checks plus an independent gateway cross-check"
+    evidence_source: "~/evidence/archive/ledger-records.json and ~/evidence/archive/gateway.log"
+    owner: "Afif Mazhar"
+    version: "G-7-v1"
+    version_date: "2026-10-05"
+    enforcement_point: "evaluate.py post-hoc on ledger plus gateway archive"
+
+  - control_id: "9"
+    name: "Drift against a frozen baseline"
+    metric: "per-run score of 2 checks: every gen_ai.request.model in the run is in the frozen baseline agent-to-model map, and the recorded disposition equals the scenario expected disposition. A window returns one verdict per run in it"
+    observation_limit: 1.0
+    exception_tolerance: 0
+    measurement_basis: "baseline frozen in ~/evidence/baseline-2026-10-05.json (agent to model map and S1/S2/S3 expected dispositions). Model ids from the gateway archive, disposition from the ledger, scenario from run-ids.txt"
+    evidence_source: "~/evidence/baseline-2026-10-05.json, ~/evidence/archive/gateway.log, ~/evidence/archive/ledger-records.json, ~/evidence/run-ids.txt"
+    owner: "Afif Mazhar"
+    version: "G-9-v1"
+    version_date: "2026-10-05"
+    enforcement_point: "evaluate.py post-hoc, per run or per time window"

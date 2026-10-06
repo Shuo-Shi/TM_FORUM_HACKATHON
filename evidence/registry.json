@@ -1,0 +1,135 @@
+[
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-nano-3-30b",
+    "registryRecordId": "aws-bedrock_nemotron-nano-3-30b",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:03:33.082464+00:00"
+  },
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-nano-9b",
+    "registryRecordId": "aws-bedrock_nemotron-nano-9b",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:03:54.149269+00:00"
+  },
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-super-120b",
+    "registryRecordId": "aws-bedrock_nemotron-super-120b",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:04:34.370712+00:00"
+  },
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-super-120b-helper",
+    "registryRecordId": "aws-bedrock_nemotron-super-120b-helper",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:04:14.266466+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "aws-knowledge",
+    "registryRecordId": "agentcoregateway_aws-knowledge",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:58:56.295699+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "cluster-status",
+    "registryRecordId": "agentcoregateway_cluster-status",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:58:16.084853+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "cr-author",
+    "registryRecordId": "agentcoregateway_cr-author",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:56:35.509713+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "customer-records",
+    "registryRecordId": "agentcoregateway_customer-records",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:57:35.882675+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "evidence-lookup",
+    "registryRecordId": "agentcoregateway_evidence-lookup",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:57:15.784437+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "helper-docs",
+    "registryRecordId": "agentcoregateway_helper-docs",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:56:15.404241+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "modaas-docs",
+    "registryRecordId": "custom_modaas-docs",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:55:54.347674+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "network-twin",
+    "registryRecordId": "agentcoregateway_network-twin",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:57:55.982522+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "runbook-lookup",
+    "registryRecordId": "agentcoregateway_runbook-lookup",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:58:36.196385+00:00"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "velocityx-filesystem",
+    "registryRecordId": "custom_velocityx-filesystem",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T15:56:55.690655+00:00"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "customer-experience-agent",
+    "registryRecordId": "awsagentcore_customer-experience-agent",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:02:19.037883+00:00"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "hackathon-helper",
+    "registryRecordId": "awsagentcore_hackathon-helper",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:00:58.268810+00:00"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "it-resolution-agent",
+    "registryRecordId": "awsagentcore_it-resolution-agent",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:01:18.719893+00:00"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "my-agent",
+    "registryRecordId": "awsagentcore_my-agent",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:01:58.917258+00:00"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "network-resolution-agent",
+    "registryRecordId": "awsagentcore_network-resolution-agent",
+    "registryApprovalStatus": "APPROVED",
+    "registryLastObserved": "2026-10-06T16:01:38.816142+00:00"
+  }
+]

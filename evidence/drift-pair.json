@@ -1,0 +1,46 @@
+{
+  "scenario": "breach",
+  "sites": [
+    {
+      "site_id": "SITE-DEN-12",
+      "rsrp_dbm": -110,
+      "assessment": "breached: packet loss above SLO threshold",
+      "confidence": 0.87
+    },
+    {
+      "site_id": "SITE-DEN-09",
+      "rsrp_dbm": -110,
+      "assessment": "breached: packet loss above SLO threshold",
+      "confidence": 0.95
+    },
+    {
+      "site_id": "SITE-PHX-04",
+      "rsrp_dbm": -110,
+      "assessment": "breached: packet loss above SLO threshold",
+      "confidence": 0.91
+    }
+  ]
+}
+{
+  "scenario": "recovery",
+  "sites": [
+    {
+      "site_id": "SITE-DEN-12",
+      "rsrp_dbm": -82,
+      "assessment": "healthy: protection path active, no degradation",
+      "confidence": 0.87
+    },
+    {
+      "site_id": "SITE-DEN-09",
+      "rsrp_dbm": -82,
+      "assessment": "healthy: protection path active, no degradation",
+      "confidence": 0.95
+    },
+    {
+      "site_id": "SITE-PHX-04",
+      "rsrp_dbm": -82,
+      "assessment": "healthy: protection path active, no degradation",
+      "confidence": 0.91
+    }
+  ]
+}

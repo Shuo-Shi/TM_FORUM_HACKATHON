@@ -1,0 +1,139 @@
+{{- if .Values.evidenceService.enabled }}
+{{- /*
+evidence-service -- the approver-facing read/write surface for the evidence chain
+(a design note point 5). Replaces the workshop's homegrown `audit-store` (point 6: "the
+audit store is a persistent, mature store"): the store is the configured sink, and
+this service is the fronted read/write API over it.
+
+Three properties below come straight from what it replaces:
+
+  replicas >= 2   the audit-store was `replicas: 1` on one PVC. Point 6 replaces
+                  the STORE; a single replica in front of it reintroduces the
+                  availability half of what was replaced.
+  no PVC          the store is the sink. A volume here would be the homegrown
+                  ledger again, with its single-writer and single-AZ constraints.
+  no K8s RBAC     it reads a log sink, not the API server. The one thing an audit
+                  reader must not be able to do is read the cluster.
+
+Reads and writes reach it ONLY through the agentgateway route in httproute.yaml,
+which carries its own authz hook.
+*/ -}}
+{{- $ns := .Values.global.namespace | default "modaas-system" }}
+{{- $ev := .Values.otelCollector.evidence | default dict }}
+{{- $cw := $ev.cloudWatchLogs | default dict }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modaas-evidence
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: modaas-evidence
+    app.kubernetes.io/component: evidence
+spec:
+  # >=2: an approver reading a trail during an incident is exactly when a single
+  # replica's rolling restart is least acceptable.
+  replicas: 2
+  selector: { matchLabels: { app.kubernetes.io/name: modaas-evidence } }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: modaas-evidence
+        app.kubernetes.io/part-of: modaas
+    spec:
+      serviceAccountName: modaas-evidence
+      containers:
+        - name: evidence
+          image: "{{ .Values.evidenceService.image.registry }}/{{ .Values.evidenceService.image.repository }}:{{ .Values.evidenceService.image.tag | default "latest" }}"
+          ports: [{ containerPort: 8080 }]
+          env:
+            - { name: AWS_REGION, value: {{ required "global.aws.region must be set" .Values.global.aws.region | quote }} }
+            # Which stamp admits a `phase: decision` record. Configuration rather
+            # than a literal in the reader: a deployment that renames the doorman
+            # or moves it would otherwise have every decision record silently
+            # refused -- emptying the one half of the timeline that is not
+            # self-reported.
+            - { name: MODAAS_ATTESTOR_NAMESPACE, value: {{ $ns | quote }} }
+            - { name: MODAAS_ATTESTOR_DEPLOYMENT, value: "modaas-authz" }
+            # The sink follows the collector's exporter: a deployment that
+            # configured CloudWatch and kept reading the in-memory backing would
+            # show an approver an empty trail while records piled up in the group.
+{{- if and $ev.enabled (eq ($ev.exporter | default "debug") "awscloudwatchlogs") }}
+            - { name: MODAAS_EVIDENCE_BACKING, value: "cloudwatch" }
+            - { name: MODAAS_EVIDENCE_LOG_GROUP, value: {{ $cw.logGroupName | quote }} }
+{{- else }}
+            # Honest about what it is: records written through this service's own
+            # POST API, in this pod, until it restarts. Enough for a lab and for a
+            # default install that has named no sink.
+            - { name: MODAAS_EVIDENCE_BACKING, value: "memory" }
+{{- end }}
+{{- if and .Values.otelCollector.enabled $ev.enabled }}
+            # `POST /records` converts to OTLP and posts here, rather than writing
+            # to the sink directly -- that is what makes the collector's
+            # k8sattributes stamp apply to participant writes too, so a
+            # participant's record arrives stamped `evidence-service` and cannot
+            # pass the decision-record integrity check.
+            - { name: MODAAS_EVIDENCE_OTLP_ENDPOINT, value: "http://opentelemetry-collector.{{ .Release.Namespace }}.svc.cluster.local:4318" }
+{{- end }}
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 384Mi }
+          readinessProbe:
+            # /healthz touches NO backing. A probe on /records would evict every
+            # replica on a CloudWatch blip, taking the audit read down for a
+            # reason that has nothing to do with the read path.
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modaas-evidence
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: modaas-evidence
+spec:
+  # ClusterIP: the ONLY intended caller is the agentgateway dataplane, because
+  # a design note point 5 requires every read and write to cross the authz hook. A
+  # LoadBalancer here would be a second, unhooked door to the audit trail.
+  type: ClusterIP
+  selector: { app.kubernetes.io/name: modaas-evidence }
+  ports: [{ port: 8080, targetPort: 8080, name: http }]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: modaas-evidence
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: modaas-evidence
+{{- if .Values.evidenceService.irsaRoleArn }}
+  annotations:
+    # IRSA for the CloudWatch Logs READ backing: logs:FilterLogEvents on the
+    # evidence log group. Read-only by design -- this service never writes to the
+    # sink (writes go through the collector), so a write permission here would be
+    # a capability nothing uses and a path around the stamp.
+    eks.amazonaws.com/role-arn: {{ .Values.evidenceService.irsaRoleArn | quote }}
+{{- end }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: modaas-evidence
+  namespace: {{ $ns }}
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app.kubernetes.io/name: modaas-evidence } }
+{{- end }}

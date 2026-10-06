@@ -1,0 +1,56 @@
+{
+  "control_id": "16",
+  "control_name": "Per-run token spend cap",
+  "run_id": "fault-1791231916-58a47b",
+  "window_utc": null,
+  "verdict": "BREACH",
+  "measured_value": 46171,
+  "threshold": {
+    "metric_name": "total_tokens_per_run",
+    "comparison": "<=",
+    "limit": 40000,
+    "exception_tolerance": 0,
+    "version": "AIA-COST-001-v1",
+    "effective_date": "2026-10-04",
+    "rationale": "Limit selected to prevent excessive token consumption and cost escalation during a single agent execution.\n"
+  },
+  "threshold_version": "AIA-COST-001-v1",
+  "effective_date": "2026-10-04",
+  "owner": "VelocityX",
+  "evidence_ids": [
+    "a7f9a99b-1168-476c-b0b4-af500512fc25",
+    "50a5d87d-975c-4a78-9fe2-97a9c7e8502f",
+    "f5b9eb1a-2e61-463d-903d-3d883d792254",
+    "e96fc13c-6fd5-4f38-980b-3a71ae7bf7e8",
+    "11500d74-250a-48ce-9e1f-4b0f2013b1ee",
+    "1de6c21f-5ed4-4e97-a87f-ba86d2c9d5e2",
+    "36c7c099-bed3-4eea-9014-b57ac7674fbb",
+    "ddeb94fc-4dda-4a13-848b-132adcfd548a",
+    "c9ab2ddb-cc1f-4e82-96e3-2d04e7ee7edc",
+    "9bd2f6e4-4cfd-4609-8fda-195d5c833418",
+    "3cc59cbc-751f-4ce5-be22-e5b9842c762d"
+  ],
+  "evidence_count": 11,
+  "result": {
+    "measured_value": 46171,
+    "unit": "tokens",
+    "threshold_limit": 40000.0,
+    "record_count": 11,
+    "invalid_record_count": 0,
+    "call_ids": [
+      "a7f9a99b-1168-476c-b0b4-af500512fc25",
+      "50a5d87d-975c-4a78-9fe2-97a9c7e8502f",
+      "f5b9eb1a-2e61-463d-903d-3d883d792254",
+      "e96fc13c-6fd5-4f38-980b-3a71ae7bf7e8",
+      "11500d74-250a-48ce-9e1f-4b0f2013b1ee",
+      "1de6c21f-5ed4-4e97-a87f-ba86d2c9d5e2",
+      "36c7c099-bed3-4eea-9014-b57ac7674fbb",
+      "ddeb94fc-4dda-4a13-848b-132adcfd548a",
+      "c9ab2ddb-cc1f-4e82-96e3-2d04e7ee7edc",
+      "9bd2f6e4-4cfd-4609-8fda-195d5c833418",
+      "3cc59cbc-751f-4ce5-be22-e5b9842c762d"
+    ]
+  },
+  "evaluated_at": "2026-10-06T15:28:42.105091+00:00",
+  "sha256": "f21211b7fab7f798fd8411a2abbd9881ce50a569ee9f28fde790d040558d2a4a"
+}

@@ -1,0 +1,479 @@
+apiVersion: v1
+data:
+  server.py: |
+    #!/usr/bin/env python3
+    # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+    # SPDX-License-Identifier: MIT-0
+    """modaas-docs-mcp — the MCP backend behind ToolConfig modaas-docs.
+
+    WHY THIS EXISTS
+      Participants need grounded answers about ODA Canvas CRDs, ModelConfig fields,
+      Cedar shapes and the DD record without tab-hunting. Module 4 already tells
+      them the truth about the alternative: "It doesn't know MoDaaS ... If Q answers
+      confidently about a MoDaaS CRD field, treat it as invented."
+
+      The reason it is a ToolConfig rather than a helper script is that it makes the
+      platform demonstrate itself. The first tool a participant touches is a GOVERNED
+      one: it sits behind /mcp/modaas-docs, it needs the gateway credential, it gets a
+      Cedar decision, and it appears in the catalog beside their own assets.
+      "Governance is inherited from where you connect" stops being a sentence on a
+      page and becomes the thing that just answered their question.
+
+      Deliberately boring, same as demo-tool-backend.py and audit-store.py: stdlib
+      only, enough MCP to be a real backend and nothing more. No embeddings, no model
+      call, no network egress — retrieval is BM25 over the shipped index, so the KB
+      answers while Bedrock is throttled and can never become a spend source.
+
+    TRUTHFULNESS RULE
+      Every hit carries source_path and heading_path. A participant can always open
+      the file an answer came from, and an answer with no citation is a bug here, not
+      a style preference.
+
+    MCP surface (Streamable HTTP, 2024-11-05):
+      POST /      initialize | tools/list | tools/call   <- what agentgateway talks to
+      POST /mcp   the same handler
+      GET  /healthz
+
+      Both POST paths are live on purpose. agentgateway's AgentgatewayBackend
+      connects StreamableHTTP to spec.custom.baseUrl's host:port with NO path
+      (shared/agentgateway_mcp_backend.py: static.{host,port,protocol}), which is why
+      demo-tool-backend.py answers on "/". /mcp is the conventional Streamable HTTP
+      path every other MCP client tries first, so serving both removes a 404 nobody
+      would diagnose quickly.
+
+    STDIO MODE IS THE UNGOVERNED PATH, AND THAT IS THE LESSON
+      `python3 modaas-docs-mcp.py --stdio` speaks MCP on stdin/stdout for local
+      development of this server. It is NOT the participant path: a client wired
+      straight to stdio or to this pod's ClusterIP gets no credential check, no Cedar
+      decision and no ledger record. That is precisely the contrast Module 4 draws —
+      the same tool, reached two ways, one of them governed.
+
+    Env:
+      INDEX_DIR   directory of *.json.gz shards          (default /kb/index.d)
+      INDEX_PATH  a single plain index.json instead      (optional, for --stdio)
+    """
+    import glob
+    import gzip
+    import json
+    import math
+    import os
+    import re
+    import sys
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+
+    INDEX_DIR = os.environ.get("INDEX_DIR", "/kb/index.d")
+    INDEX_PATH = os.environ.get("INDEX_PATH", "")
+    # 8080 in the cluster, matching the Service and the ToolConfig's baseUrl.
+    # Overridable only so the server can be exercised locally on a laptop that
+    # already has something on 8080 — which is how this port collision was found.
+    PORT = int(os.environ.get("PORT", "8080"))
+    PROTOCOL = "2024-11-05"
+    SERVER_NAME = "modaas-docs-mcp"
+    SERVER_VERSION = "1.0.0"
+
+    MAX_LIMIT = 20
+    SNIPPET_CHARS = 600
+
+    K1 = 1.5
+    B = 0.75
+
+    _WORD = re.compile(r"[a-z0-9]+")
+    _CAMEL = re.compile(r"[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])")
+
+    # Participants ask questions, not keyword queries ("how do I declare
+    # allowedConsumers"). Left in, the question words score: a heading literally
+    # named "How do I buy or build an ODA Canvas?" outranked the CRD reference on
+    # that exact query during evaluation. Deliberately short — anything that could
+    # be a field name or a MoDaaS term stays in.
+    STOPWORDS = frozenset("""
+    a an and are as at be but by can do does for from get got has have how i if in
+    into is it its me my not of on or so that the their them then there these this
+    to use used using was what when where which who why will with you your
+    """.split())
+
+    TOOLS = [
+        {
+            "name": "search_docs",
+            "description": (
+                "Search the ODA Canvas and MoDaaS documentation corpus. Returns ranked "
+                "passages, each with the file it came from (source_path) and the heading "
+                "path it sat under, so every answer can be traced to a file. Ask in plain "
+                "words or with field names, e.g. 'how do I declare allowedConsumers' or "
+                "'ToolConfig governance dataClassification enum'."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "What you want to know."},
+                    "limit": {
+                        "type": "integer",
+                        "description": "Passages to return, 1-%d (default 5)." % MAX_LIMIT,
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": (
+                            "Restrict to one corpus: 'ai-canvas', 'modaas', 'oda-canvas' or "
+                            "'workshop'. Omit to search all four."
+                        ),
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+        {
+            "name": "get_doc",
+            "description": (
+                "Fetch a passage or a whole document verbatim. Pass an id from "
+                "search_docs (e.g. 'ai-canvas/decision-log/ADR-004-gateway-mediation-architecture.md#03') for that "
+                "passage, or a bare source_path for the entire file reassembled in order."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "A chunk id from search_docs, or a source_path.",
+                    },
+                },
+                "required": ["id"],
+            },
+        },
+    ]
+
+
+    def log(msg):
+        """One line per invocation on stdout. `kubectl logs` is the cheapest
+        evidence surface this workshop has, and a governed tool whose calls leave no
+        trace teaches the wrong thing."""
+        sys.stdout.write("%s %s\n" % (SERVER_NAME, msg))
+        sys.stdout.flush()
+
+
+    def tokenize(text):
+        """Lowercase word tokens plus camelCase splits.
+
+        `allowedConsumers` has to match a query of "allowed consumers" and vice
+        versa, and `spec.governance.dataClassification` has to match any of its
+        segments — participants type the field name they half-remember, not the one
+        in the schema.
+        """
+        out = []
+        for raw in re.findall(r"[A-Za-z0-9_.\-]+", text):
+            for part in _WORD.findall(raw.lower()):
+                if len(part) > 1 and part not in STOPWORDS:
+                    out.append(part)
+            for part in _CAMEL.findall(raw):
+                p = part.lower()
+                if len(p) > 1 and p not in STOPWORDS:
+                    out.append(p)
+        return out
+
+
+    class Index(object):
+        """The corpus, plus the BM25 statistics computed once at load."""
+
+        def __init__(self):
+            self.chunks = []
+            self.by_id = {}
+            self.by_source = {}
+            self.postings = {}      # term -> {chunk position: term frequency}
+            self.lengths = []
+            self.avg_len = 0.0
+            self.error = ""
+            self.sources = {}
+
+        def load(self):
+            docs = []
+            if INDEX_PATH:
+                paths = [INDEX_PATH]
+            else:
+                paths = sorted(glob.glob(os.path.join(INDEX_DIR, "*.json.gz")))
+                paths += sorted(glob.glob(os.path.join(INDEX_DIR, "*.json")))
+            if not paths:
+                self.error = ("no index found (INDEX_DIR=%s, INDEX_PATH=%s) — the "
+                              "ConfigMap shards are not mounted" % (INDEX_DIR, INDEX_PATH or "unset"))
+                return self
+            for p in paths:
+                try:
+                    opener = gzip.open if p.endswith(".gz") else open
+                    with opener(p, "rt", encoding="utf-8") as f:
+                        doc = json.load(f)
+                    got = doc.get("chunks") or []
+                    docs.extend(got)
+                    log("loaded shard %s chunks=%d" % (os.path.basename(p), len(got)))
+                except Exception as e:
+                    # One unreadable shard must not take the whole KB down; the
+                    # others still answer, and the error is visible in /healthz.
+                    self.error = "%s unreadable: %s" % (os.path.basename(p), e)
+                    log("WARN %s" % self.error)
+            if not docs:
+                self.error = self.error or "index contained no chunks"
+                return self
+
+            docs.sort(key=lambda c: c.get("id", ""))
+            self.chunks = docs
+            for i, c in enumerate(docs):
+                self.by_id[c["id"]] = c
+                self.by_source.setdefault(c["source_path"], []).append(c)
+                self.sources[c["source_path"].split("/", 1)[0]] = \
+                    self.sources.get(c["source_path"].split("/", 1)[0], 0) + 1
+                # Heading terms are counted twice: a passage under a heading named
+                # for the thing you searched is usually the passage you wanted.
+                terms = tokenize(c.get("text", "")) \
+                    + tokenize(" ".join(c.get("heading_path") or [])) * 2
+                self.lengths.append(len(terms) or 1)
+                for t in terms:
+                    self.postings.setdefault(t, {})
+                    self.postings[t][i] = self.postings[t].get(i, 0) + 1
+            self.avg_len = sum(self.lengths) / float(len(self.lengths))
+            return self
+
+        def search(self, query, limit, source=None):
+            if not self.chunks:
+                return []
+            q = tokenize(query)
+            if not q:
+                return []
+            n = len(self.chunks)
+            scores = {}
+            for t in set(q):
+                post = self.postings.get(t)
+                if not post:
+                    continue
+                idf = math.log(1.0 + (n - len(post) + 0.5) / (len(post) + 0.5))
+                for i, tf in post.items():
+                    denom = tf + K1 * (1 - B + B * self.lengths[i] / self.avg_len)
+                    scores[i] = scores.get(i, 0.0) + idf * (tf * (K1 + 1)) / denom
+            hits = []
+            for i, s in scores.items():
+                c = self.chunks[i]
+                if source and not c["source_path"].startswith(source.rstrip("/") + "/"):
+                    continue
+                hits.append((s, c))
+            # Sort by score, then id: a tie must not reorder between calls.
+            hits.sort(key=lambda kv: (-kv[0], kv[1]["id"]))
+            return hits[:limit]
+
+
+    INDEX = Index()
+
+
+    def _snippet(text):
+        if len(text) <= SNIPPET_CHARS:
+            return text
+        return text[:SNIPPET_CHARS].rsplit("\n", 1)[0].rstrip() + "\n…"
+
+
+    def _err(msg):
+        return {"isError": True, "content": [{"type": "text", "text": msg}]}
+
+
+    def _ok(payload):
+        return {"content": [{"type": "text", "text": json.dumps(payload, indent=2, ensure_ascii=False)}]}
+
+
+    def do_search(args):
+        query = (args or {}).get("query") or ""
+        if not query.strip():
+            return _err("search_docs requires a non-empty 'query'.")
+        try:
+            limit = int((args or {}).get("limit") or 5)
+        except (TypeError, ValueError):
+            return _err("'limit' must be an integer between 1 and %d." % MAX_LIMIT)
+        limit = max(1, min(MAX_LIMIT, limit))
+        # Availability before validity: with no index loaded, INDEX.sources is empty,
+        # so a perfectly valid `source` would be reported as "unknown source ...
+        # available: none" — blaming the caller for the operator's missing ConfigMap.
+        if not INDEX.chunks:
+            return _err("knowledge base unavailable: %s" % (INDEX.error or "empty index"))
+        source = (args or {}).get("source") or None
+        if source and source not in INDEX.sources:
+            return _err("unknown source %r — available: %s"
+                        % (source, ", ".join(sorted(INDEX.sources)) or "none"))
+
+        hits = INDEX.search(query, limit, source)
+        log("search_docs query=%r source=%s hits=%d" % (query[:120], source or "all", len(hits)))
+        if not hits:
+            return _ok({
+                "query": query,
+                "results": [],
+                "note": ("No passage matched. Try the field or kind name verbatim "
+                         "(ModelConfig, ToolConfig, dataClassification, ExposedAPI)."),
+            })
+        return _ok({
+            "query": query,
+            "results": [{
+                "id": c["id"],
+                "source_path": c["source_path"],
+                "heading_path": c.get("heading_path") or [],
+                "score": round(s, 4),
+                "text": _snippet(c["text"]),
+            } for s, c in hits],
+            "citation_rule": ("Cite source_path (and heading_path) for every claim; "
+                              "call get_doc with an id for the full passage."),
+        })
+
+
+    def do_get(args):
+        ident = ((args or {}).get("id") or "").strip()
+        if not ident:
+            return _err("get_doc requires 'id' — a chunk id from search_docs or a source_path.")
+        if not INDEX.chunks:
+            return _err("knowledge base unavailable: %s" % (INDEX.error or "empty index"))
+
+        chunk = INDEX.by_id.get(ident)
+        if chunk:
+            log("get_doc id=%s" % ident)
+            return _ok({
+                "id": chunk["id"],
+                "source_path": chunk["source_path"],
+                "heading_path": chunk.get("heading_path") or [],
+                "text": chunk["text"],
+            })
+
+        parts = INDEX.by_source.get(ident)
+        if parts:
+            log("get_doc source_path=%s chunks=%d" % (ident, len(parts)))
+            ordered = sorted(parts, key=lambda c: c["id"])
+            return _ok({
+                "source_path": ident,
+                "heading_path": [],
+                "chunk_ids": [c["id"] for c in ordered],
+                "text": "\n\n".join(c["text"] for c in ordered),
+            })
+
+        near = [s for s in INDEX.by_source if ident.lower() in s.lower()][:5]
+        return _err("no such id or source_path: %r%s"
+                    % (ident, ("  did you mean: " + ", ".join(near)) if near else ""))
+
+
+    def call_tool(name, args):
+        if name == "search_docs":
+            return do_search(args)
+        if name == "get_doc":
+            return do_get(args)
+        return _err("unknown tool %s" % name)
+
+
+    def handle(req):
+        """One JSON-RPC request -> one response dict, or None for a notification."""
+        rid, method = req.get("id"), req.get("method")
+        if method == "initialize":
+            res = {"protocolVersion": PROTOCOL,
+                   "capabilities": {"tools": {}},
+                   "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION}}
+        elif method == "tools/list":
+            res = {"tools": TOOLS}
+        elif method == "tools/call":
+            p = req.get("params") or {}
+            res = call_tool(p.get("name"), p.get("arguments"))
+        elif method == "ping":
+            res = {}
+        elif rid is None or str(method or "").startswith("notifications/"):
+            # A notification has no response. Answering one with {"id": null}
+            # is not valid JSON-RPC, and agentgateway rejects it with a 500,
+            # which broke every real MCP client (found 2026-09-29).
+            return None
+        else:
+            return {"jsonrpc": "2.0", "id": rid,
+                    "error": {"code": -32601, "message": "method not found: %s" % method}}
+        return {"jsonrpc": "2.0", "id": rid, "result": res}
+
+
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass    # the access log is noise; tool calls are logged by log()
+
+        def _json(self, code, obj):
+            b = json.dumps(obj).encode()
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(b)))
+            # Streamable HTTP clients expect a session id on initialize; a fixed one
+            # is fine for a single-tenant, read-only backend.
+            self.send_header("Mcp-Session-Id", SERVER_NAME)
+            self.end_headers()
+            self.wfile.write(b)
+
+        def do_GET(self):
+            if self.path.startswith("/healthz"):
+                # 503 when the index did not load, so the readinessProbe actually
+                # gates it. A 200 with "ok": false would let a pod with no corpus go
+                # Ready and answer every question with an error — the ToolConfig
+                # would reach Approved, publish /mcp/modaas-docs, and be useless.
+                # That is the "Approved does not mean reachable" failure this
+                # workshop already documents for demo-crm-lookup; no need for a
+                # second instance of it.
+                ok = bool(INDEX.chunks)
+                return self._json(200 if ok else 503, {
+                    "ok": ok,
+                    "chunks": len(INDEX.chunks),
+                    "sources": INDEX.sources,
+                    "error": INDEX.error,
+                })
+            return self._json(404, {"error": "not found"})
+
+        def do_POST(self):
+            if self.path.rstrip("/") not in ("", "/mcp"):
+                return self._json(404, {"error": "not found: %s" % self.path})
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                req = json.loads(self.rfile.read(n))
+            except Exception as e:
+                return self._json(400, {"jsonrpc": "2.0", "id": None,
+                                        "error": {"code": -32700, "message": str(e)}})
+            out = handle(req)
+            if out is None:
+                # Streamable HTTP: a notification is accepted with no body.
+                self.send_response(202)
+                self.send_header("Content-Length", "0")
+                self.send_header("Mcp-Session-Id", SERVER_NAME)
+                self.end_headers()
+                return
+            self._json(200, out)
+
+
+    def serve_stdio():
+        """Line-delimited JSON-RPC on stdin/stdout. See the module docstring: this
+        path is ungoverned by construction and is not the participant path."""
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                req = json.loads(line)
+            except Exception as e:
+                out = {"jsonrpc": "2.0", "id": None,
+                       "error": {"code": -32700, "message": str(e)}}
+            else:
+                out = handle(req)
+            if out is not None:
+                # stdout carries only JSON-RPC here; log() is rebound to stderr below.
+                sys.stdout.write(json.dumps(out) + "\n")
+                sys.stdout.flush()
+
+
+    if __name__ == "__main__":
+        stdio = "--stdio" in sys.argv[1:]
+        if stdio:
+            # log() must not corrupt the JSON-RPC stream on stdout.
+            log = lambda msg: sys.stderr.write("%s %s\n" % (SERVER_NAME, msg))
+        INDEX.load()
+        if INDEX.error:
+            log("WARN %s" % INDEX.error)
+        log("ready chunks=%d sources=%s" % (len(INDEX.chunks), sorted(INDEX.sources)))
+        if stdio:
+            serve_stdio()
+        else:
+            log("listening on 0.0.0.0:%d" % PORT)
+            HTTPServer(("0.0.0.0", PORT), H).serve_forever()
+kind: ConfigMap
+metadata:
+  annotations:
+    kopf.zalando.org/last-handled-configuration: |
+      {"data":{"server.py":"#!/usr/bin/env python3\n# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.\n# SPDX-License-Identifier: MIT-0\n\"\"\"modaas-docs-mcp \u2014 the MCP backend behind ToolConfig modaas-docs.\n\nWHY THIS EXISTS\n  Participants need grounded answers about ODA Canvas CRDs, ModelConfig fields,\n  Cedar shapes and the DD record without tab-hunting. Module 4 already tells\n  them the truth about the alternative: \"It doesn't know MoDaaS ... If Q answers\n  confidently about a MoDaaS CRD field, treat it as invented.\"\n\n  The reason it is a ToolConfig rather than a helper script is that it makes the\n  platform demonstrate itself. The first tool a participant touches is a GOVERNED\n  one: it sits behind /mcp/modaas-docs, it needs the gateway credential, it gets a\n  Cedar decision, and it appears in the catalog beside their own assets.\n  \"Governance is inherited from where you connect\" stops being a sentence on a\n  page and becomes the thing that just answered their question.\n\n  Deliberately boring, same as demo-tool-backend.py and audit-store.py: stdlib\n  only, enough MCP to be a real backend and nothing more. No embeddings, no model\n  call, no network egress \u2014 retrieval is BM25 over the shipped index, so the KB\n  answers while Bedrock is throttled and can never become a spend source.\n\nTRUTHFULNESS RULE\n  Every hit carries source_path and heading_path. A participant can always open\n  the file an answer came from, and an answer with no citation is a bug here, not\n  a style preference.\n\nMCP surface (Streamable HTTP, 2024-11-05):\n  POST /      initialize | tools/list | tools/call   <- what agentgateway talks to\n  POST /mcp   the same handler\n  GET  /healthz\n\n  Both POST paths are live on purpose. agentgateway's AgentgatewayBackend\n  connects StreamableHTTP to spec.custom.baseUrl's host:port with NO path\n  (shared/agentgateway_mcp_backend.py: static.{host,port,protocol}), which is why\n  demo-tool-backend.py answers on \"/\". /mcp is the conventional Streamable HTTP\n  path every other MCP client tries first, so serving both removes a 404 nobody\n  would diagnose quickly.\n\nSTDIO MODE IS THE UNGOVERNED PATH, AND THAT IS THE LESSON\n  `python3 modaas-docs-mcp.py --stdio` speaks MCP on stdin/stdout for local\n  development of this server. It is NOT the participant path: a client wired\n  straight to stdio or to this pod's ClusterIP gets no credential check, no Cedar\n  decision and no ledger record. That is precisely the contrast Module 4 draws \u2014\n  the same tool, reached two ways, one of them governed.\n\nEnv:\n  INDEX_DIR   directory of *.json.gz shards          (default /kb/index.d)\n  INDEX_PATH  a single plain index.json instead      (optional, for --stdio)\n\"\"\"\nimport glob\nimport gzip\nimport json\nimport math\nimport os\nimport re\nimport sys\nfrom http.server import HTTPServer, BaseHTTPRequestHandler\n\nINDEX_DIR = os.environ.get(\"INDEX_DIR\", \"/kb/index.d\")\nINDEX_PATH = os.environ.get(\"INDEX_PATH\", \"\")\n# 8080 in the cluster, matching the Service and the ToolConfig's baseUrl.\n# Overridable only so the server can be exercised locally on a laptop that\n# already has something on 8080 \u2014 which is how this port collision was found.\nPORT = int(os.environ.get(\"PORT\", \"8080\"))\nPROTOCOL = \"2024-11-05\"\nSERVER_NAME = \"modaas-docs-mcp\"\nSERVER_VERSION = \"1.0.0\"\n\nMAX_LIMIT = 20\nSNIPPET_CHARS = 600\n\nK1 = 1.5\nB = 0.75\n\n_WORD = re.compile(r\"[a-z0-9]+\")\n_CAMEL = re.compile(r\"[A-Z]?[a-z0-9]+|[A-Z]+(?![a-z])\")\n\n# Participants ask questions, not keyword queries (\"how do I declare\n# allowedConsumers\"). Left in, the question words score: a heading literally\n# named \"How do I buy or build an ODA Canvas?\" outranked the CRD reference on\n# that exact query during evaluation. Deliberately short \u2014 anything that could\n# be a field name or a MoDaaS term stays in.\nSTOPWORDS = frozenset(\"\"\"\na an and are as at be but by can do does for from get got has have how i if in\ninto is it its me my not of on or so that the their them then there these this\nto use used using was what when where which who why will with you your\n\"\"\".split())\n\nTOOLS = [\n    {\n        \"name\": \"search_docs\",\n        \"description\": (\n            \"Search the ODA Canvas and MoDaaS documentation corpus. Returns ranked \"\n            \"passages, each with the file it came from (source_path) and the heading \"\n            \"path it sat under, so every answer can be traced to a file. Ask in plain \"\n            \"words or with field names, e.g. 'how do I declare allowedConsumers' or \"\n            \"'ToolConfig governance dataClassification enum'.\"\n        ),\n        \"inputSchema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"query\": {\"type\": \"string\", \"description\": \"What you want to know.\"},\n                \"limit\": {\n                    \"type\": \"integer\",\n                    \"description\": \"Passages to return, 1-%d (default 5).\" % MAX_LIMIT,\n                },\n                \"source\": {\n                    \"type\": \"string\",\n                    \"description\": (\n                        \"Restrict to one corpus: 'ai-canvas', 'modaas', 'oda-canvas' or \"\n                        \"'workshop'. Omit to search all four.\"\n                    ),\n                },\n            },\n            \"required\": [\"query\"],\n        },\n    },\n    {\n        \"name\": \"get_doc\",\n        \"description\": (\n            \"Fetch a passage or a whole document verbatim. Pass an id from \"\n            \"search_docs (e.g. 'ai-canvas/decision-log/ADR-004-gateway-mediation-architecture.md#03') for that \"\n            \"passage, or a bare source_path for the entire file reassembled in order.\"\n        ),\n        \"inputSchema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"id\": {\n                    \"type\": \"string\",\n                    \"description\": \"A chunk id from search_docs, or a source_path.\",\n                },\n            },\n            \"required\": [\"id\"],\n        },\n    },\n]\n\n\ndef log(msg):\n    \"\"\"One line per invocation on stdout. `kubectl logs` is the cheapest\n    evidence surface this workshop has, and a governed tool whose calls leave no\n    trace teaches the wrong thing.\"\"\"\n    sys.stdout.write(\"%s %s\\n\" % (SERVER_NAME, msg))\n    sys.stdout.flush()\n\n\ndef tokenize(text):\n    \"\"\"Lowercase word tokens plus camelCase splits.\n\n    `allowedConsumers` has to match a query of \"allowed consumers\" and vice\n    versa, and `spec.governance.dataClassification` has to match any of its\n    segments \u2014 participants type the field name they half-remember, not the one\n    in the schema.\n    \"\"\"\n    out = []\n    for raw in re.findall(r\"[A-Za-z0-9_.\\-]+\", text):\n        for part in _WORD.findall(raw.lower()):\n            if len(part) > 1 and part not in STOPWORDS:\n                out.append(part)\n        for part in _CAMEL.findall(raw):\n            p = part.lower()\n            if len(p) > 1 and p not in STOPWORDS:\n                out.append(p)\n    return out\n\n\nclass Index(object):\n    \"\"\"The corpus, plus the BM25 statistics computed once at load.\"\"\"\n\n    def __init__(self):\n        self.chunks = []\n        self.by_id = {}\n        self.by_source = {}\n        self.postings = {}      # term -> {chunk position: term frequency}\n        self.lengths = []\n        self.avg_len = 0.0\n        self.error = \"\"\n        self.sources = {}\n\n    def load(self):\n        docs = []\n        if INDEX_PATH:\n            paths = [INDEX_PATH]\n        else:\n            paths = sorted(glob.glob(os.path.join(INDEX_DIR, \"*.json.gz\")))\n            paths += sorted(glob.glob(os.path.join(INDEX_DIR, \"*.json\")))\n        if not paths:\n            self.error = (\"no index found (INDEX_DIR=%s, INDEX_PATH=%s) \u2014 the \"\n                          \"ConfigMap shards are not mounted\" % (INDEX_DIR, INDEX_PATH or \"unset\"))\n            return self\n        for p in paths:\n            try:\n                opener = gzip.open if p.endswith(\".gz\") else open\n                with opener(p, \"rt\", encoding=\"utf-8\") as f:\n                    doc = json.load(f)\n                got = doc.get(\"chunks\") or []\n                docs.extend(got)\n                log(\"loaded shard %s chunks=%d\" % (os.path.basename(p), len(got)))\n            except Exception as e:\n                # One unreadable shard must not take the whole KB down; the\n                # others still answer, and the error is visible in /healthz.\n                self.error = \"%s unreadable: %s\" % (os.path.basename(p), e)\n                log(\"WARN %s\" % self.error)\n        if not docs:\n            self.error = self.error or \"index contained no chunks\"\n            return self\n\n        docs.sort(key=lambda c: c.get(\"id\", \"\"))\n        self.chunks = docs\n        for i, c in enumerate(docs):\n            self.by_id[c[\"id\"]] = c\n            self.by_source.setdefault(c[\"source_path\"], []).append(c)\n            self.sources[c[\"source_path\"].split(\"/\", 1)[0]] = \\\n                self.sources.get(c[\"source_path\"].split(\"/\", 1)[0], 0) + 1\n            # Heading terms are counted twice: a passage under a heading named\n            # for the thing you searched is usually the passage you wanted.\n            terms = tokenize(c.get(\"text\", \"\")) \\\n                + tokenize(\" \".join(c.get(\"heading_path\") or [])) * 2\n            self.lengths.append(len(terms) or 1)\n            for t in terms:\n                self.postings.setdefault(t, {})\n                self.postings[t][i] = self.postings[t].get(i, 0) + 1\n        self.avg_len = sum(self.lengths) / float(len(self.lengths))\n        return self\n\n    def search(self, query, limit, source=None):\n        if not self.chunks:\n            return []\n        q = tokenize(query)\n        if not q:\n            return []\n        n = len(self.chunks)\n        scores = {}\n        for t in set(q):\n            post = self.postings.get(t)\n            if not post:\n                continue\n            idf = math.log(1.0 + (n - len(post) + 0.5) / (len(post) + 0.5))\n            for i, tf in post.items():\n                denom = tf + K1 * (1 - B + B * self.lengths[i] / self.avg_len)\n                scores[i] = scores.get(i, 0.0) + idf * (tf * (K1 + 1)) / denom\n        hits = []\n        for i, s in scores.items():\n            c = self.chunks[i]\n            if source and not c[\"source_path\"].startswith(source.rstrip(\"/\") + \"/\"):\n                continue\n            hits.append((s, c))\n        # Sort by score, then id: a tie must not reorder between calls.\n        hits.sort(key=lambda kv: (-kv[0], kv[1][\"id\"]))\n        return hits[:limit]\n\n\nINDEX = Index()\n\n\ndef _snippet(text):\n    if len(text) <= SNIPPET_CHARS:\n        return text\n    return text[:SNIPPET_CHARS].rsplit(\"\\n\", 1)[0].rstrip() + \"\\n\u2026\"\n\n\ndef _err(msg):\n    return {\"isError\": True, \"content\": [{\"type\": \"text\", \"text\": msg}]}\n\n\ndef _ok(payload):\n    return {\"content\": [{\"type\": \"text\", \"text\": json.dumps(payload, indent=2, ensure_ascii=False)}]}\n\n\ndef do_search(args):\n    query = (args or {}).get(\"query\") or \"\"\n    if not query.strip():\n        return _err(\"search_docs requires a non-empty 'query'.\")\n    try:\n        limit = int((args or {}).get(\"limit\") or 5)\n    except (TypeError, ValueError):\n        return _err(\"'limit' must be an integer between 1 and %d.\" % MAX_LIMIT)\n    limit = max(1, min(MAX_LIMIT, limit))\n    # Availability before validity: with no index loaded, INDEX.sources is empty,\n    # so a perfectly valid `source` would be reported as \"unknown source ...\n    # available: none\" \u2014 blaming the caller for the operator's missing ConfigMap.\n    if not INDEX.chunks:\n        return _err(\"knowledge base unavailable: %s\" % (INDEX.error or \"empty index\"))\n    source = (args or {}).get(\"source\") or None\n    if source and source not in INDEX.sources:\n        return _err(\"unknown source %r \u2014 available: %s\"\n                    % (source, \", \".join(sorted(INDEX.sources)) or \"none\"))\n\n    hits = INDEX.search(query, limit, source)\n    log(\"search_docs query=%r source=%s hits=%d\" % (query[:120], source or \"all\", len(hits)))\n    if not hits:\n        return _ok({\n            \"query\": query,\n            \"results\": [],\n            \"note\": (\"No passage matched. Try the field or kind name verbatim \"\n                     \"(ModelConfig, ToolConfig, dataClassification, ExposedAPI).\"),\n        })\n    return _ok({\n        \"query\": query,\n        \"results\": [{\n            \"id\": c[\"id\"],\n            \"source_path\": c[\"source_path\"],\n            \"heading_path\": c.get(\"heading_path\") or [],\n            \"score\": round(s, 4),\n            \"text\": _snippet(c[\"text\"]),\n        } for s, c in hits],\n        \"citation_rule\": (\"Cite source_path (and heading_path) for every claim; \"\n                          \"call get_doc with an id for the full passage.\"),\n    })\n\n\ndef do_get(args):\n    ident = ((args or {}).get(\"id\") or \"\").strip()\n    if not ident:\n        return _err(\"get_doc requires 'id' \u2014 a chunk id from search_docs or a source_path.\")\n    if not INDEX.chunks:\n        return _err(\"knowledge base unavailable: %s\" % (INDEX.error or \"empty index\"))\n\n    chunk = INDEX.by_id.get(ident)\n    if chunk:\n        log(\"get_doc id=%s\" % ident)\n        return _ok({\n            \"id\": chunk[\"id\"],\n            \"source_path\": chunk[\"source_path\"],\n            \"heading_path\": chunk.get(\"heading_path\") or [],\n            \"text\": chunk[\"text\"],\n        })\n\n    parts = INDEX.by_source.get(ident)\n    if parts:\n        log(\"get_doc source_path=%s chunks=%d\" % (ident, len(parts)))\n        ordered = sorted(parts, key=lambda c: c[\"id\"])\n        return _ok({\n            \"source_path\": ident,\n            \"heading_path\": [],\n            \"chunk_ids\": [c[\"id\"] for c in ordered],\n            \"text\": \"\\n\\n\".join(c[\"text\"] for c in ordered),\n        })\n\n    near = [s for s in INDEX.by_source if ident.lower() in s.lower()][:5]\n    return _err(\"no such id or source_path: %r%s\"\n                % (ident, (\"  did you mean: \" + \", \".join(near)) if near else \"\"))\n\n\ndef call_tool(name, args):\n    if name == \"search_docs\":\n        return do_search(args)\n    if name == \"get_doc\":\n        return do_get(args)\n    return _err(\"unknown tool %s\" % name)\n\n\ndef handle(req):\n    \"\"\"One JSON-RPC request -> one response dict, or None for a notification.\"\"\"\n    rid, method = req.get(\"id\"), req.get(\"method\")\n    if method == \"initialize\":\n        res = {\"protocolVersion\": PROTOCOL,\n               \"capabilities\": {\"tools\": {}},\n               \"serverInfo\": {\"name\": SERVER_NAME, \"version\": SERVER_VERSION}}\n    elif method == \"tools/list\":\n        res = {\"tools\": TOOLS}\n    elif method == \"tools/call\":\n        p = req.get(\"params\") or {}\n        res = call_tool(p.get(\"name\"), p.get(\"arguments\"))\n    elif method == \"ping\":\n        res = {}\n    elif rid is None or str(method or \"\").startswith(\"notifications/\"):\n        # A notification has no response. Answering one with {\"id\": null}\n        # is not valid JSON-RPC, and agentgateway rejects it with a 500,\n        # which broke every real MCP client (found 2026-09-29).\n        return None\n    else:\n        return {\"jsonrpc\": \"2.0\", \"id\": rid,\n                \"error\": {\"code\": -32601, \"message\": \"method not found: %s\" % method}}\n    return {\"jsonrpc\": \"2.0\", \"id\": rid, \"result\": res}\n\n\nclass H(BaseHTTPRequestHandler):\n    def log_message(self, *a):\n        pass    # the access log is noise; tool calls are logged by log()\n\n    def _json(self, code, obj):\n        b = json.dumps(obj).encode()\n        self.send_response(code)\n        self.send_header(\"Content-Type\", \"application/json\")\n        self.send_header(\"Content-Length\", str(len(b)))\n        # Streamable HTTP clients expect a session id on initialize; a fixed one\n        # is fine for a single-tenant, read-only backend.\n        self.send_header(\"Mcp-Session-Id\", SERVER_NAME)\n        self.end_headers()\n        self.wfile.write(b)\n\n    def do_GET(self):\n        if self.path.startswith(\"/healthz\"):\n            # 503 when the index did not load, so the readinessProbe actually\n            # gates it. A 200 with \"ok\": false would let a pod with no corpus go\n            # Ready and answer every question with an error \u2014 the ToolConfig\n            # would reach Approved, publish /mcp/modaas-docs, and be useless.\n            # That is the \"Approved does not mean reachable\" failure this\n            # workshop already documents for demo-crm-lookup; no need for a\n            # second instance of it.\n            ok = bool(INDEX.chunks)\n            return self._json(200 if ok else 503, {\n                \"ok\": ok,\n                \"chunks\": len(INDEX.chunks),\n                \"sources\": INDEX.sources,\n                \"error\": INDEX.error,\n            })\n        return self._json(404, {\"error\": \"not found\"})\n\n    def do_POST(self):\n        if self.path.rstrip(\"/\") not in (\"\", \"/mcp\"):\n            return self._json(404, {\"error\": \"not found: %s\" % self.path})\n        try:\n            n = int(self.headers.get(\"Content-Length\", 0))\n            req = json.loads(self.rfile.read(n))\n        except Exception as e:\n            return self._json(400, {\"jsonrpc\": \"2.0\", \"id\": None,\n                                    \"error\": {\"code\": -32700, \"message\": str(e)}})\n        out = handle(req)\n        if out is None:\n            # Streamable HTTP: a notification is accepted with no body.\n            self.send_response(202)\n            self.send_header(\"Content-Length\", \"0\")\n            self.send_header(\"Mcp-Session-Id\", SERVER_NAME)\n            self.end_headers()\n            return\n        self._json(200, out)\n\n\ndef serve_stdio():\n    \"\"\"Line-delimited JSON-RPC on stdin/stdout. See the module docstring: this\n    path is ungoverned by construction and is not the participant path.\"\"\"\n    for line in sys.stdin:\n        line = line.strip()\n        if not line:\n            continue\n        try:\n            req = json.loads(line)\n        except Exception as e:\n            out = {\"jsonrpc\": \"2.0\", \"id\": None,\n                   \"error\": {\"code\": -32700, \"message\": str(e)}}\n        else:\n            out = handle(req)\n        if out is not None:\n            # stdout carries only JSON-RPC here; log() is rebound to stderr below.\n            sys.stdout.write(json.dumps(out) + \"\\n\")\n            sys.stdout.flush()\n\n\nif __name__ == \"__main__\":\n    stdio = \"--stdio\" in sys.argv[1:]\n    if stdio:\n        # log() must not corrupt the JSON-RPC stream on stdout.\n        log = lambda msg: sys.stderr.write(\"%s %s\\n\" % (SERVER_NAME, msg))\n    INDEX.load()\n    if INDEX.error:\n        log(\"WARN %s\" % INDEX.error)\n    log(\"ready chunks=%d sources=%s\" % (len(INDEX.chunks), sorted(INDEX.sources)))\n    if stdio:\n        serve_stdio()\n    else:\n        log(\"listening on 0.0.0.0:%d\" % PORT)\n        HTTPServer((\"0.0.0.0\", PORT), H).serve_forever()\n"}}
+  creationTimestamp: "2026-10-04T17:58:21Z"
+  name: modaas-docs-mcp-app
+  namespace: components
+  resourceVersion: "177848"
+  uid: 10c5e554-6dd8-4f04-b107-9737e94a0adc

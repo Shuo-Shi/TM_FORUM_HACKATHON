@@ -1,0 +1,25 @@
+# Egress lockdown for authz-gateway: STS, the PDP, DNS.
+#
+# THIS DOES NOT CURRENTLY ENFORCE. Verified on modaas-v3: aws-eks-nodeagent runs
+# with --enable-network-policy=false, and six NetworkPolicies across
+# canvas-system, components and modaas-system enforce nothing.
+#
+# It is written anyway so the intent is reviewable and becomes active the moment
+# enforcement is enabled. Claiming it as a control would be the
+# declared-but-not-enforced class. Enabling enforcement is NOT this unit's call:
+# it would activate all six existing policies at once, none tested against
+# traffic, which needs a human decision about blast radius (STATUS.md records this).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: modaas-authz-egress
+  namespace: modaas-system
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: modaas-authz } }
+  policyTypes: [Egress]
+  egress:
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: modaas-pdp } } }]
+      ports: [{ protocol: TCP, port: 8080 }]
+    - ports: [{ protocol: TCP, port: 443 }]     # STS, regional endpoint
+    - to: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } } }]
+      ports: [{ protocol: UDP, port: 53 }, { protocol: TCP, port: 53 }]

@@ -1,0 +1,113 @@
+{{- if .Values.pdp.enabled }}
+{{- /*
+  Cedar PDP (a design note). This was NOT templated by the chart at all — the tool plane's authz contract
+  (ToolConfig spec.access.agentPolicy.engine.cedar.pdpRef, default "modaas-pdp") pointed at a service
+  that no chart created, so every per-tool authorization silently had no decision point. Found while
+  working G11; tracked as G27.
+  Two replicas because it is on the tool-call path: a single-replica PDP makes authorization a
+  single point of failure, which is not acceptable for a control that must fail closed.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modaas-pdp
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: modaas-pdp
+spec:
+  replicas: {{ .Values.pdp.replicas | default 2 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: modaas-pdp
+  template:
+    metadata:
+      labels:
+        {{- include "modaas.labels" . | nindent 8 }}
+        app.kubernetes.io/name: modaas-pdp
+    spec:
+      serviceAccountName: modaas-pdp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+        - name: pdp
+          image: {{ printf "%s/%s@%s" .Values.pdp.image.registry .Values.pdp.image.repository .Values.pdp.image.digest }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /ready, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 384Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modaas-pdp
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/name: modaas-pdp
+spec:
+  selector:
+    app.kubernetes.io/name: modaas-pdp
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: modaas-pdp
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+---
+{{- /*
+  The PolicyWatcher LISTs/WATCHes ConfigMaps labelled app.kubernetes.io/part-of=modaas-pdp to
+  hot-load Cedar policies. Without this Role the watcher crash-looped on a 403 every ~150ms while
+  /ready still returned 200 — a design note permits loadedPolicies=0 at first install, so a completely
+  blind PDP looked healthy AND "failed closed", because it could load nothing at all.
+*/}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: modaas-pdp
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: modaas-pdp
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: modaas-pdp
+subjects:
+  - kind: ServiceAccount
+    name: modaas-pdp
+    namespace: {{ .Values.global.namespace }}
+{{- end }}

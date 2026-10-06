@@ -1,0 +1,16 @@
+{
+  "control_id": "16",
+  "control_name": "Per-run token spend cap",
+  "run_id": "fault-1791234744-0cd140",
+  "window_utc": null,
+  "verdict": "NO EVIDENCE",
+  "measured_value": null,
+  "threshold_limit": 39000,
+  "threshold_version": "G-16-v1",
+  "effective_date": "2026-10-05",
+  "owner": "Afif Mazhar",
+  "evidence_ids": [],
+  "note": "No gateway llm record found for run fault-1791234744-0cd140",
+  "evaluated_at": "2026-10-06T15:46:11.856928+00:00",
+  "sha256": "5f06ed3077b2fbf0741bd072942ba7b3ad36b1c20b309dd74439531d24628a58"
+}

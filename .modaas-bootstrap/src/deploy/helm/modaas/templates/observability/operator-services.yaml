@@ -1,0 +1,26 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- range $component := list "model" "tool" "agent" }}
+{{- $cfg := index $.Values.operators $component }}
+{{- if $cfg.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $cfg.name }}-metrics
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" $ | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $cfg.name) | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "modaas.selectorLabels" (dict "name" $cfg.name) | nindent 4 }}
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: metrics
+      protocol: TCP
+---
+{{- end }}
+{{- end }}
+{{- end }}

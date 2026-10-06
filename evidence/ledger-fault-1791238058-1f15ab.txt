@@ -1,0 +1,29 @@
+AUDIT TRAIL -- 9 records
+================================================================
+ 1. [2026-10-05T22:07:40Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791238058-1f15ab
+    trace_id=ee549377f18342eba39a44e72a1e819c customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T22:10:25Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791238058-1f15ab
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791238058-1f15ab trace_id=ee549377f18342eba39a44e72a1e819c result_summary=
+ 3. [2026-10-05T22:10:25Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791238058-1f15ab
+    trace_id=ee549377f18342eba39a44e72a1e819c governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 4. [2026-10-05T22:10:25Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791238058-1f15ab
+    disposition=undetermined, decision=''
+ 5. [2026-10-05T22:10:28Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791238058-1f15ab
+    trace_id=33db6ad2ca8c4561a2d4e88127023ca1 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T22:10:40Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791238058-1f15ab
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791238058-1f15ab trace_id=33db6ad2ca8c4561a2d4e88127023ca1 result_summary=- **Incident disposition**: Undetermined (no clear root ca
+ 7. [2026-10-05T22:10:40Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791238058-1f15ab
+    trace_id=33db6ad2ca8c4561a2d4e88127023ca1 governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 8. [2026-10-05T22:10:40Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791238058-1f15ab
+    disposition=gather-evidence, decision='- **Incident disposition**: Undetermined (no clear root cause identified in evidence)  \n- **Action per runbook**: Use `runbook-lookup___lookup` to search for "L
+ 9. [2026-10-05T22:10:56Z] NEGOTIATION | actor=it-resolution-agent | step=5.5
+    correlation_id=fault-1791238058-1f15ab
+    network->it proposal (561 chars): 'export CID=fault-1791238058-1f15ab\n\nnetwork-resolution-agent  ·  answer\n------------------------------------------------------------------------\naws: [ERROR]: An

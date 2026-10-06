@@ -1,0 +1,68 @@
+{
+  "sites": [
+    {
+      "id": "SITE-DEN-12",
+      "type": "edge",
+      "prediction": {
+        "rsrp_dbm": -98,
+        "rsrq_db": -12,
+        "sinr_db": 8,
+        "assessment": "degraded: fronthaul packet loss reducing effective RSRP by 6 dB",
+        "confidence": 0.87
+      },
+      "elements": [
+        {"id": "DU-DEN-12-A", "type": "5g-du", "status": "degraded",
+         "fault": "CRC errors on upstream port eth-1/7, protection path eth-1/8 available"},
+        {"id": "UPF-DEN-12-1", "type": "5g-upf", "status": "healthy"},
+        {"id": "RTR-DEN-12-CORE", "type": "router", "status": "healthy",
+         "note": "eth-1/7 CRC errors incrementing; eth-1/8 standby, clean"}
+      ],
+      "telemetry": {
+        "packet_loss_pct": [0.1, 0.2, 3.8, 4.2, 4.1],
+        "latency_ms_p95": [8, 9, 41, 44, 43],
+        "window": "09:00-09:30Z"
+      }
+    },
+    {
+      "id": "SITE-DEN-09",
+      "type": "aggregation",
+      "prediction": {
+        "rsrp_dbm": -85,
+        "rsrq_db": -8,
+        "sinr_db": 15,
+        "assessment": "healthy: no degradation detected",
+        "confidence": 0.95
+      },
+      "elements": [
+        {"id": "RTR-DEN-09-AGG", "type": "router", "status": "healthy"}
+      ],
+      "telemetry": {
+        "packet_loss_pct": [0.01, 0.02, 0.01, 0.01, 0.02],
+        "latency_ms_p95": [4, 5, 4, 5, 4],
+        "window": "09:00-09:30Z"
+      }
+    },
+    {
+      "id": "SITE-PHX-04",
+      "type": "edge",
+      "prediction": {
+        "rsrp_dbm": -105,
+        "rsrq_db": -15,
+        "sinr_db": 3,
+        "assessment": "degraded: failing optic causing severe packet loss",
+        "confidence": 0.91
+      },
+      "elements": [
+        {"id": "DU-PHX-04-B", "type": "5g-du", "status": "degraded",
+         "fault": "Failing optic on RTR-PHX-04-CORE eth-2/3; protection path available"},
+        {"id": "RTR-PHX-04-CORE", "type": "router", "status": "degraded",
+         "note": "eth-2/3 optic failure; eth-2/4 standby path available"}
+      ],
+      "telemetry": {
+        "packet_loss_pct": [0.5, 1.2, 5.4, 6.8, 6.5],
+        "latency_ms_p95": [12, 18, 38, 44, 42],
+        "window": "09:00-09:30Z"
+      }
+    }
+  ]
+}

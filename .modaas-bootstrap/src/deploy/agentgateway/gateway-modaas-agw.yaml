@@ -1,0 +1,92 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: modaas-agw
+  namespace: agentgateway-system
+spec:
+  gatewayClassName: agentgateway
+  # U10 (usage-and-cost): wires the model-cost catalog (see
+  # agentgatewayparameters-model-catalog.yaml) into agentgateway's native
+  # cost/usage pipeline. Gateway-level only, per that CR's own CRD comment --
+  # GatewayClass-level parametersRef would be silently ignored for
+  # modelCatalog specifically.
+  # EXPOSURE IS INTENTIONAL, recorded 2026-09-26 (owner decision, 17:10Z):
+  # "as ai-native oda canvas getting deployed for enterprise; we would need
+  # global endpoints to be available and control will be through authz". The
+  # controller-synthesized Service is a public LoadBalancer and STAYS one. This
+  # is the TMF ODA Canvas ExposedAPI posture: reachability is a product
+  # property, and the control is identity plus policy on every call -- not
+  # network position. A scheme annotation making the ELB internal was drafted
+  # and DELIBERATELY NOT TAKEN; do not re-add one. a design note "Exposure" is the
+  # decision record, and it also carries the two consequences a public
+  # perimeter creates: 8080/8081 are plaintext on that public LB, and SigV4
+  # identity is structural-only (authz-gateway/identity.py:1-16).
+  #
+  # What DOES have to hold, because the perimeter is public: every listener
+  # this Gateway declares must be covered by an identity/authorization policy
+  # and a rate limit. That is enforced by
+  # tests/test_agentgateway_perimeter_manifests.py and by
+  # operators/shared/tests/test_agentgateway_listener_coverage.py, which
+  # additionally refuses any operator-emitted parentRef pointing at a listener
+  # the policies do not cover.
+  infrastructure:
+    parametersRef:
+      group: agentgateway.dev
+      kind: AgentgatewayParameters
+      name: modaas-agw-params
+  listeners:
+    - name: http
+      port: 8080
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
+    # An AgentgatewayModel attaches ONLY to a listener that explicitly allows its kind. The original
+    # listener declared namespaces but no kinds, so it defaulted to HTTPRoute/GRPCRoute and the model
+    # silently never attached — attachedRoutes stayed 0 and the route answered 404. Found by reading
+    # controller/pkg/agentgateway/translator/testdata/models/llm-listener.yaml upstream.
+    - name: llm
+      port: 8081
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
+        kinds:
+          - group: agentgateway.dev
+            kind: AgentgatewayModel
+    # W4-A (sprint-2026-09-ga-hardening.md) — requirement #42: TLS on the
+    # agentgateway perimeter, pre-hackathon. Mirrors the `llm` listener
+    # above (same allowedRoutes shape, same AgentgatewayModel kind) so an
+    # AgentgatewayModel that attaches to `llm` today can equally attach
+    # to this listener once traffic is routed to :8443. :8081 (`llm`)
+    # stays live and unmodified — this is a cutover added alongside it,
+    # not a replacement (W4-D, coordinator, performs the actual traffic
+    # rebind live and only after this listener is verified answering, per
+    # Coherence Rule 17: never publish a scheme the corresponding listener
+    # doesn't yet serve). certificateRefs points at the Secret produced by
+    # tls-certificate.yaml (agw-perimeter-tls, same namespace).
+    - name: llm-tls
+      port: 8443
+      protocol: HTTPS
+      # (3) service port listener-8443: the agentgateway controller
+      # synthesizes the modaas-agw Service directly from this Gateway's
+      # listeners (standard Gateway API behavior — confirmed by the
+      # absence of any hand-authored Service manifest for modaas-agw
+      # anywhere in this repo; the only Service YAMLs under deploy/ target
+      # the RETIRED ai-gateway/istio-system dataplane, e.g.
+      # deploy/helm/modaas/templates/gateway/service.yaml, and must not be
+      # reused here). No separate Service edit exists to make — adding
+      # this listener IS how "service port listener-8443" gets created.
+      # The coordinator (W4-D) applies this live and can confirm the
+      # controller-generated Service picks up port 8443 under that name.
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: agw-perimeter-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+        kinds:
+          - group: agentgateway.dev
+            kind: AgentgatewayModel

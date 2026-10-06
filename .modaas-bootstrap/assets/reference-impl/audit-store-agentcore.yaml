@@ -1,0 +1,35 @@
+# A second, VPC-internal address for the audit store, for agents hosted on
+# AgentCore Runtime.
+#
+# audit-store.yaml publishes the store as a ClusterIP Service. Pods resolve
+# `audit-store.components`; an AgentCore Runtime cannot. It runs outside the
+# cluster, attached to your VPC by network interfaces in the private subnets
+# (networkMode: VPC), so it has no cluster DNS and no route to a ClusterIP.
+# This Service asks the cluster for an INTERNAL load balancer in those same
+# private subnets (they carry the kubernetes.io/role/internal-elb tag), which a
+# runtime in the VPC can reach and nothing outside the VPC can.
+#
+# Writes stay gated exactly as before: the store refuses a POST without the
+# matching X-Audit-Token (audit-store.py), whichever address it arrived on.
+#
+# The address takes one to three minutes to appear:
+#   kubectl -n components get svc audit-store-agentcore \
+#     -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+# make-agentcore-agents.py reads it from there.
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-store-agentcore
+  namespace: components
+  labels:
+    app: audit-store
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: audit-store
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080

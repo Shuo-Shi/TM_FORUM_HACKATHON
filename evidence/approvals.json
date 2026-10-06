@@ -1,0 +1,142 @@
+[
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-nano-3-30b",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-nano-9b",
+    "approver": "ec2-user@team",
+    "attestation": "Reviewed: PROMPT_ATTACK filter HIGH on input, Bedrock serverless ON_DEMAND, ec2-user",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-super-120b",
+    "approver": "ec2-user@team",
+    "attestation": "Reviewed: Bedrock serverless ON_DEMAND, Super baseline",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ModelConfig",
+    "name": "nemotron-super-120b-helper",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "aws-knowledge",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "cluster-status",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "cr-author",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "customer-records",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "demo-crm-lookup",
+    "approver": null,
+    "attestation": null,
+    "phase": "Reviewing"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "evidence-lookup",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "helper-docs",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "modaas-docs",
+    "approver": "ec2-user@team",
+    "attestation": "Reviewed: public docs corpus, read-only, no egress from the pod",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "network-twin",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "runbook-lookup",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "ToolConfig",
+    "name": "velocityx-filesystem",
+    "approver": "ec2-user@team",
+    "attestation": "Reviewed: filesystem access restricted to VelocityX workspace",
+    "phase": "Approved"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "customer-experience-agent",
+    "approver": "ec2-user@team",
+    "attestation": "Reviewed: bounded reference agent, max 3 turns, 12000 total tokens, 1200 output tokens",
+    "phase": "Approved"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "hackathon-helper",
+    "approver": "system-admin",
+    "attestation": "Approved by the workshop platform at install",
+    "phase": "Approved"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "it-resolution-agent",
+    "approver": "afif.mazhar@team",
+    "attestation": "Reviewed 2026-10-05: team-agent-v3 (F-01 negotiation detection)",
+    "phase": "Approved"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "my-agent",
+    "approver": "ec2-user@workshop",
+    "attestation": "Reviewed: governed gateway path only",
+    "phase": "Approved"
+  },
+  {
+    "kind": "AgentConfig",
+    "name": "network-resolution-agent",
+    "approver": "afif.mazhar@team",
+    "attestation": "Reviewed: v5 restores compiling v3 source and records the actual reversible action in result-inspection",
+    "phase": "Approved"
+  }
+]

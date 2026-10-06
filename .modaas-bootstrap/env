@@ -1,0 +1,4 @@
+REGION=us-east-1
+ASSETS_BUCKET=ws-event-70748eba-1eb-us-east-1
+ASSETS_PREFIX=9cdfd646-3cb1-4f5e-b774-cc8bedae6cad/assets/
+IDE_STACK=a-02-code-editor

@@ -1,0 +1,12 @@
+{"customers": [
+  {"id": "CUST-1001", "name": "Meridian Logistics", "tier": "enterprise", "services": ["5G-SLICE-EDGE-04", "FIBER-DIA-2G"], "site": "SITE-DEN-12", "open_complaints": [{"id": "CMP-771", "summary": "Intermittent latency spikes on edge slice since 09:20", "service": "5G-SLICE-EDGE-04"}]},
+  {"id": "CUST-1002", "name": "Aurora Health Group", "tier": "enterprise", "services": ["5G-SLICE-EDGE-04"], "site": "SITE-DEN-12", "open_complaints": [{"id": "CMP-772", "summary": "Telemetry dashboard shows packet loss on remote clinics", "service": "5G-SLICE-EDGE-04"}]},
+  {"id": "CUST-1003", "name": "Bluepeak Retail", "tier": "standard", "services": ["FIBER-DIA-1G"], "site": "SITE-DEN-09", "open_complaints": []},
+  {"id": "CUST-2087", "name": "Northwind Retail", "tier": "silver", "services": ["5G-SLICE-EDGE-04", "FIBER-DIA-1G"], "site": "SITE-DEN-12", "open_complaints": [{"id": "CMP-803", "summary": "POS terminals intermittently offline at 3 stores", "service": "5G-SLICE-EDGE-04"}]},
+  {"id": "CUST-3310", "name": "Cascade Health", "tier": "enterprise", "services": ["5G-SLICE-EDGE-08", "FIBER-DIA-10G"], "site": "SITE-PHX-04", "open_complaints": [{"id": "CMP-812", "summary": "Patient monitoring devices reporting connectivity drops", "service": "5G-SLICE-EDGE-08"}], "regulatory": "HIPAA-regulated, change-frozen until end of quarter"},
+  {"id": "CUST-4455", "name": "Summit Energy", "tier": "enterprise", "services": ["5G-SLICE-EDGE-04", "SD-WAN-PREMIUM"], "site": "SITE-DEN-12", "open_complaints": []},
+  {"id": "CUST-5102", "name": "Ironworks Manufacturing", "tier": "standard", "services": ["FIBER-DIA-1G"], "site": "SITE-DEN-09", "open_complaints": []},
+  {"id": "CUST-5890", "name": "Greenfield Agriculture", "tier": "standard", "services": ["5G-SLICE-EDGE-08"], "site": "SITE-PHX-04", "open_complaints": [{"id": "CMP-819", "summary": "IoT sensor data delayed by 30+ seconds", "service": "5G-SLICE-EDGE-08"}]},
+  {"id": "CUST-6201", "name": "Pacific Transit Authority", "tier": "enterprise", "services": ["5G-SLICE-EDGE-04", "FIBER-DIA-10G", "SD-WAN-PREMIUM"], "site": "SITE-DEN-12", "open_complaints": [{"id": "CMP-825", "summary": "Fleet tracking accuracy degraded on I-70 corridor", "service": "5G-SLICE-EDGE-04"}]},
+  {"id": "CUST-7044", "name": "Ridgeline Hotels", "tier": "silver", "services": ["FIBER-DIA-2G", "SD-WAN-STANDARD"], "site": "SITE-DEN-09", "open_complaints": []}
+]}

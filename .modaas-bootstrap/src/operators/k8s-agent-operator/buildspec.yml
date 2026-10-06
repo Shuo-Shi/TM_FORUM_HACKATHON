@@ -1,0 +1,22 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      # The snapshot is NOT committed (see .gitignore and build-and-push.sh), so
+      # CodeBuild refreshes it here too -- a build triggered from a source zip
+      # that lacks it would otherwise fail at COPY with a confusing message.
+      - rm -rf shared_build/shared
+      - mkdir -p shared_build
+      - if [ -d ../shared ]; then cp -r ../shared shared_build/shared; fi
+      - test -f shared_build/shared/asset_operator.py || (echo "shared_build/shared missing; source zip must include operators/shared or a pre-refreshed snapshot" && exit 1)
+      - echo "Logging in to ECR $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - export IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo "IMAGE_URI=$IMAGE_URI"
+  build:
+    commands:
+      - docker build -t $IMAGE_URI .
+  post_build:
+    commands:
+      - docker push $IMAGE_URI
+      - echo "Pushed $IMAGE_URI"

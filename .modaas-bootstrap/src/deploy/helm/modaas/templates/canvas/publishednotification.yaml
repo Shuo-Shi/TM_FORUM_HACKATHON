@@ -1,0 +1,21 @@
+{{- if .Values.canvasIntegration.publishedNotification }}
+# Audit ledger ConfigMap — operators write PublishedNotification events here
+# (when configured) so subscribers see lifecycle transitions even if their
+# webhook is offline. a design note audit ledger.
+{{- if .Values.canvasIntegration.auditLedger.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.canvasIntegration.auditLedger.sinkConfigMapRef | default "modaas-audit-sink" }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: audit-ledger
+  annotations:
+    modaas.tmforum.org/notes: |
+      a design note audit ledger sink — operators append lifecycle events here
+      via patch.body.merge in addition to PublishedNotification CRs.
+data:
+  schema-version: "v1"
+{{- end }}
+{{- end }}

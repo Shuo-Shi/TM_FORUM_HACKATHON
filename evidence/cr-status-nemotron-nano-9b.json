@@ -1,0 +1,232 @@
+{
+    "apiVersion": "oda.tmforum.org/v1beta1",
+    "kind": "ModelConfig",
+    "metadata": {
+        "annotations": {
+            "kopf.zalando.org/last-handled-configuration": "{\"spec\":{\"access\":{\"allowedConsumers\":[\"bootstrap-key\"]},\"alias\":\"nemotron-nano-9b\",\"awsBedrock\":{\"apiMode\":\"converse\",\"guardrails\":{\"contentPolicy\":{\"filters\":[{\"inputStrength\":\"HIGH\",\"outputStrength\":\"NONE\",\"type\":\"PROMPT_ATTACK\"}]}},\"region\":\"us-east-1\"},\"credentialProviderType\":\"NONE\",\"governance\":{\"approval\":{\"required\":true,\"requiredApprovals\":1}},\"modelId\":\"nvidia.nemotron-nano-9b-v2\",\"paused\":false,\"provider\":\"aws-bedrock\",\"safety\":{\"enforcer\":{\"enforcedAt\":\"self\",\"kind\":\"bedrockGuardrail\"},\"required\":true}},\"metadata\":{\"annotations\":{\"modaas.tmforum.org/approval-attestation\":\"Reviewed: PROMPT_ATTACK filter HIGH on input, Bedrock serverless ON_DEMAND, ec2-user\",\"modaas.tmforum.org/approver\":\"ec2-user@team\"}}}\n",
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"oda.tmforum.org/v1beta1\",\"kind\":\"ModelConfig\",\"metadata\":{\"annotations\":{},\"name\":\"nemotron-nano-9b\",\"namespace\":\"components\"},\"spec\":{\"access\":{\"allowedConsumers\":[\"bootstrap-key\"]},\"alias\":\"nemotron-nano-9b\",\"awsBedrock\":{\"apiMode\":\"converse\",\"guardrails\":{\"contentPolicy\":{\"filters\":[{\"inputStrength\":\"HIGH\",\"outputStrength\":\"NONE\",\"type\":\"PROMPT_ATTACK\"}]}},\"region\":\"us-east-1\"},\"credentialProviderType\":\"NONE\",\"governance\":{\"approval\":{\"required\":true,\"requiredApprovals\":1}},\"modelId\":\"nvidia.nemotron-nano-9b-v2\",\"paused\":false,\"provider\":\"aws-bedrock\",\"safety\":{\"enforcer\":{\"enforcedAt\":\"self\",\"kind\":\"bedrockGuardrail\"},\"required\":true}}}\n",
+            "modaas.tmforum.org/approval-attestation": "Reviewed: PROMPT_ATTACK filter HIGH on input, Bedrock serverless ON_DEMAND, ec2-user",
+            "modaas.tmforum.org/approver": "ec2-user@team"
+        },
+        "creationTimestamp": "2026-10-04T11:08:11Z",
+        "finalizers": [
+            "kopf.zalando.org/KopfFinalizerMarker"
+        ],
+        "generation": 7,
+        "name": "nemotron-nano-9b",
+        "namespace": "components",
+        "ownerReferences": [
+            {
+                "apiVersion": "oda.tmforum.org/v1",
+                "blockOwnerDeletion": true,
+                "controller": false,
+                "kind": "Component",
+                "name": "nemotron-nano-9b",
+                "uid": "bd6a5c7d-a920-4511-9b41-70d73eec892a"
+            }
+        ],
+        "resourceVersion": "339864",
+        "uid": "1ad8bda4-b0aa-4492-a13d-b3c9f7fc51f0"
+    },
+    "spec": {
+        "access": {
+            "allowedConsumers": [
+                "bootstrap-key"
+            ]
+        },
+        "alias": "nemotron-nano-9b",
+        "awsBedrock": {
+            "apiMode": "converse",
+            "guardrails": {
+                "contentPolicy": {
+                    "filters": [
+                        {
+                            "inputStrength": "HIGH",
+                            "outputStrength": "NONE",
+                            "type": "PROMPT_ATTACK"
+                        }
+                    ]
+                }
+            },
+            "region": "us-east-1"
+        },
+        "credentialProviderType": "NONE",
+        "governance": {
+            "approval": {
+                "required": true,
+                "requiredApprovals": 1
+            }
+        },
+        "modelId": "nvidia.nemotron-nano-9b-v2",
+        "paused": false,
+        "provider": "aws-bedrock",
+        "safety": {
+            "enforcer": {
+                "enforcedAt": "self",
+                "kind": "bedrockGuardrail"
+            },
+            "required": true
+        }
+    },
+    "status": {
+        "componentRef": {
+            "name": "nemotron-nano-9b",
+            "namespace": "components",
+            "uid": "bd6a5c7d-a920-4511-9b41-70d73eec892a"
+        },
+        "conditions": [
+            {
+                "lastTransitionTime": "2026-10-04T18:54:28.866427+00:00",
+                "message": "Owned by Component nemotron-nano-9b",
+                "reason": "ComponentLinked",
+                "status": "True",
+                "type": "OwnedByComponent"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:28.890443+00:00",
+                "message": "IdentityConfig modaas-modelconfig-nemotron-nano-9b provisioned via Canvas",
+                "reason": "IdentityConfigCreated",
+                "status": "True",
+                "type": "IdentityProvisioned"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:28.912029+00:00",
+                "message": "DependentAPI created; awaiting Canvas canvas-depapi-op resolution",
+                "reason": "ResolutionPending",
+                "status": "False",
+                "type": "DependentAPIProvisioned"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:28.920227+00:00",
+                "message": "ServiceEntry egress-aws-bedrock-us-east-1 created for aws-bedrock in us-east-1",
+                "reason": "ServiceEntryCreated",
+                "status": "True",
+                "type": "EgressAllowlisted"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:28.979851+00:00",
+                "message": "Approval predicate satisfied; advancing to provisioning",
+                "reason": "ApprovalSatisfied",
+                "status": "False",
+                "type": "ApprovalRequired"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:51.454791+00:00",
+                "message": "AgentgatewayModel/nemotron-nano-9b applied",
+                "reason": "RouteProgrammed",
+                "status": "True",
+                "type": "AgentgatewayRouteProgrammed"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:51.504578+00:00",
+                "message": "1 consumer grant(s) as policyId model-nemotron-nano-9b",
+                "reason": "GrantsProjected",
+                "status": "True",
+                "type": "ModelGrantsProjected"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:29.769895+00:00",
+                "message": "Backend provisioned",
+                "reason": "BackendReady",
+                "status": "True",
+                "type": "Provisioned"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:31.184959+00:00",
+                "message": "Record aws-bedrock_nemotron-nano-9b",
+                "reason": "Registered",
+                "status": "True",
+                "type": "RegistryRegistered"
+            },
+            {
+                "lastTransitionTime": "2026-10-05T00:36:27.484031+00:00",
+                "message": "POST /resource → timed out",
+                "reason": "TMF639Unreachable",
+                "status": "False",
+                "type": "TMF639Projected"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:51.366671+00:00",
+                "message": "VirtualService + AuthorizationPolicy emitted for nemotron-nano-9b",
+                "reason": "IstioReady",
+                "status": "True",
+                "type": "IstioPerAssetProvisioned"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:54:51.471691+00:00",
+                "message": "AgentgatewayModel exists but carries no parent status yet",
+                "reason": "NotYetAccepted",
+                "status": "False",
+                "type": "ObservedPathRead"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:53:46.388748+00:00",
+                "message": "spec.paused=true",
+                "reason": "SpecPaused",
+                "status": "True",
+                "type": "ReconcilePaused"
+            },
+            {
+                "lastTransitionTime": "2026-10-04T18:53:46.605189+00:00",
+                "message": "Registry record aws-bedrock_nemotron-nano-9b marked servingState=PAUSED via legacy (lifecycle state left intact — DEPRECATED is terminal, see F71)",
+                "reason": "ServingStatePaused",
+                "status": "True",
+                "type": "RegistryPauseProjected"
+            }
+        ],
+        "dialectEndpoints": {
+            "openai-compat": "http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8081/v1/chat/completions"
+        },
+        "driftDetected": false,
+        "driftReason": "",
+        "endpoint": "http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8081/v1/chat/completions",
+        "endpointScope": "public",
+        "endpoints": {
+            "mesh": "http://modaas-agw.agentgateway-system.svc.cluster.local:8081/v1/chat/completions",
+            "public": "http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8081/v1/chat/completions"
+        },
+        "enforcerKind": "bedrockGuardrail",
+        "globalResourceEndpoint": "http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8081/v1/chat/completions",
+        "governance": {
+            "approvals": [
+                {
+                    "at": "2026-10-04T18:14:14.423091+00:00",
+                    "attestation": "Reviewed: PROMPT_ATTACK filter HIGH on input, Bedrock serverless ON_DEMAND",
+                    "role": "modaas-modelconfig-nemotron-nano-9b-admin",
+                    "signature": "",
+                    "subject": "ec2-user@team"
+                }
+            ]
+        },
+        "guardrailId": "cqrfp8d4q41m",
+        "guardrailVersion": "4",
+        "lastReconciled": "2026-10-04T18:54:51.274052+00:00",
+        "modelClassifications": [
+            "chat"
+        ],
+        "modelType": "chat",
+        "observedGeneration": 7,
+        "phase": "Approved",
+        "reason": "Approved",
+        "reconcile": {
+            "message": "reconciled",
+            "phase": "Reviewing"
+        },
+        "registryApprovalId": "6cad269b82b7485d943a7db936c27bbc",
+        "registryApprovalStatus": "APPROVED",
+        "registryLastObserved": "2026-10-05T00:36:07.379721+00:00",
+        "registryRecordId": "aws-bedrock_nemotron-nano-9b",
+        "registryRecordUid": "JBvp44Fs6JOO",
+        "resolvedModelId": "nvidia.nemotron-nano-9b-v2",
+        "resync_from_registry": {
+            "drift": false,
+            "observed": "APPROVED"
+        },
+        "safetyEnabled": true,
+        "scan_orphan_records": {
+            "orphans": [],
+            "scanned_crs": 4
+        },
+        "upstreamEndpoint": "https://bedrock-runtime.us-east-1.amazonaws.com"
+    }
+}

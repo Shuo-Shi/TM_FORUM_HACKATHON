@@ -1,0 +1,158 @@
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  annotations:
+    kopf.zalando.org/last-handled-configuration: |
+      {"spec":{"access":{"cedarPolicy":"permit(\n  principal,\n  action == Action::\"invoke\",\n  resource\n) unless {\n  context has toolName &&\n  ![\"search_docs\", \"get_doc\"].contains(context.toolName)\n} unless {\n  resource has dataClassification &&\n  resource.dataClassification == \"restricted\"\n};\n"},"credentialProviderType":"NONE","custom":{"baseUrl":"http://modaas-docs-mcp.components.svc.cluster.local:8080","protocol":"mcp"},"description":"ODA Canvas + MoDaaS documentation search \u2014 public docs corpus, read-only","governance":{"approval":{"required":true,"requiredApprovals":1},"dataClassification":"public","owner":"workshop-facilitators"},"paused":false,"provider":"custom","toolName":"modaas-docs","toolType":"mcp"},"metadata":{"annotations":{"modaas.tmforum.org/approval-attestation":"Reviewed: public docs corpus, read-only, no egress from the pod","modaas.tmforum.org/approver":"ec2-user@team"}}}
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"oda.tmforum.org/v1beta1","kind":"ToolConfig","metadata":{"annotations":{},"name":"modaas-docs","namespace":"components"},"spec":{"access":{"cedarPolicy":"permit(\n  principal,\n  action == Action::\"invoke\",\n  resource\n) unless {\n  context has toolName \u0026\u0026\n  ![\"search_docs\", \"get_doc\"].contains(context.toolName)\n} unless {\n  resource has dataClassification \u0026\u0026\n  resource.dataClassification == \"restricted\"\n};\n"},"credentialProviderType":"NONE","custom":{"baseUrl":"http://modaas-docs-mcp.components.svc.cluster.local:8080","protocol":"mcp"},"description":"ODA Canvas + MoDaaS documentation search — public docs corpus, read-only","governance":{"approval":{"required":true,"requiredApprovals":1},"dataClassification":"public","owner":"workshop-facilitators"},"provider":"custom","toolName":"modaas-docs","toolType":"mcp"}}
+    modaas.tmforum.org/approval-attestation: 'Reviewed: public docs corpus, read-only,
+      no egress from the pod'
+    modaas.tmforum.org/approver: ec2-user@team
+  creationTimestamp: "2026-10-04T17:58:52Z"
+  finalizers:
+  - kopf.zalando.org/KopfFinalizerMarker
+  generation: 3
+  name: modaas-docs
+  namespace: components
+  ownerReferences:
+  - apiVersion: oda.tmforum.org/v1
+    blockOwnerDeletion: true
+    controller: false
+    kind: Component
+    name: modaas-docs
+    uid: a69f3d76-5660-410c-a716-a9bbb9b86249
+  resourceVersion: "699801"
+  uid: 32e636e2-40d6-41ae-a463-5a7c4eac4008
+spec:
+  access:
+    cedarPolicy: |
+      permit(
+        principal,
+        action == Action::"invoke",
+        resource
+      ) unless {
+        context has toolName &&
+        !["search_docs", "get_doc"].contains(context.toolName)
+      } unless {
+        resource has dataClassification &&
+        resource.dataClassification == "restricted"
+      };
+  credentialProviderType: NONE
+  custom:
+    baseUrl: http://modaas-docs-mcp.components.svc.cluster.local:8080
+    protocol: mcp
+  description: ODA Canvas + MoDaaS documentation search — public docs corpus, read-only
+  governance:
+    approval:
+      required: true
+      requiredApprovals: 1
+    dataClassification: public
+    owner: workshop-facilitators
+  paused: false
+  provider: custom
+  toolName: modaas-docs
+  toolType: mcp
+status:
+  access:
+    pdpPolicyId: modaas-toolconfig-modaas-docs
+  backendKind: custom
+  componentRef:
+    name: modaas-docs
+    namespace: components
+    uid: a69f3d76-5660-410c-a716-a9bbb9b86249
+  conditions:
+  - lastTransitionTime: "2026-10-05T11:03:34.788707+00:00"
+    message: IdentityConfig modaas-toolconfig-modaas-docs provisioned via Canvas
+    reason: IdentityConfigCreated
+    status: "True"
+    type: IdentityProvisioned
+  - lastTransitionTime: "2026-10-05T11:03:34.848269+00:00"
+    message: DependentAPI created; awaiting Canvas canvas-depapi-op resolution
+    reason: ResolutionPending
+    status: "False"
+    type: DependentAPIProvisioned
+  - lastTransitionTime: "2026-10-05T11:03:34.884335+00:00"
+    message: VirtualService + AuthorizationPolicy emitted for modaas-docs
+    reason: IstioReady
+    status: "True"
+    type: IstioPerAssetProvisioned
+  - lastTransitionTime: "2026-10-05T11:03:34.884414+00:00"
+    message: ServiceEntry egress-custom-us-east-1 created for custom in us-east-1
+    reason: ServiceEntryCreated
+    status: "True"
+    type: EgressAllowlisted
+  - lastTransitionTime: "2026-10-05T11:03:34.929667+00:00"
+    message: Cedar policy projected to PDP as policyId modaas-toolconfig-modaas-docs
+    reason: PolicyConfigMapProjected
+    status: "True"
+    type: PolicyProjected
+  - lastTransitionTime: "2026-10-04T17:59:11.868669+00:00"
+    message: modaas-docs-mcp.components.svc.cluster.local resolves in cluster DNS.
+      Only DNS is checked from the operator; the dataplane's own connection to the
+      backend is not
+    reason: HostResolves
+    status: "True"
+    type: UpstreamResolvable
+  - lastTransitionTime: "2026-10-04T17:59:11.888002+00:00"
+    message: Approval predicate satisfied; advancing to provisioning
+    reason: ApprovalSatisfied
+    status: "False"
+    type: ApprovalRequired
+  - lastTransitionTime: "2026-10-05T11:03:57.115790+00:00"
+    message: AgentgatewayBackend+HTTPRoute for modaas-docs applied
+    reason: RouteProgrammed
+    status: "True"
+    type: AgentgatewayRouteProgrammed
+  - lastTransitionTime: "2026-10-05T11:03:34.964073+00:00"
+    message: Backend provisioned
+    reason: BackendReady
+    status: "True"
+    type: Provisioned
+  - lastTransitionTime: "2026-10-05T11:03:37.014627+00:00"
+    message: Record custom_modaas-docs
+    reason: Registered
+    status: "True"
+    type: RegistryRegistered
+  - lastTransitionTime: "2026-10-05T15:23:47.190297+00:00"
+    message: POST /resource → timed out
+    reason: TMF639Unreachable
+    status: "False"
+    type: TMF639Projected
+  dialectEndpoints:
+    agentcore-mcp: http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8080/mcp/modaas-docs
+  driftDetected: false
+  driftReason: ""
+  endpoint: http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8080/mcp/modaas-docs
+  endpointScope: public
+  endpoints:
+    mesh: http://modaas-agw.agentgateway-system.svc.cluster.local:8080/mcp/modaas-docs
+    public: http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8080/mcp/modaas-docs
+  globalResourceEndpoint: http://ad67259f4e23140beb1d81760a0616ef-1222438846.us-east-1.elb.amazonaws.com:8080/mcp/modaas-docs
+  governance:
+    approvals:
+    - at: "2026-10-04T17:59:11.868928+00:00"
+      attestation: 'Reviewed: public docs corpus, read-only, no egress from the pod'
+      role: modaas-toolconfig-modaas-docs-admin
+      signature: ""
+      subject: ec2-user@team
+  lastReconciled: "2026-10-05T11:03:57.092395+00:00"
+  managed: true
+  observedGeneration: 3
+  phase: Approved
+  reason: Approved
+  reconcile:
+    message: reconciled
+    phase: Reviewing
+  registryApprovalId: 7876bd806d0640b5934e00d8f052ef5a
+  registryApprovalStatus: APPROVED
+  registryLastObserved: "2026-10-05T15:23:27.080054+00:00"
+  registryRecordId: custom_modaas-docs
+  registryRecordUid: NYAwqer12oL9
+  resync_from_registry:
+    drift: false
+    drift_reason: NotAdoptMode
+    observed: APPROVED
+  scan_orphan_records:
+    orphans: []
+    scanned_crs: 10

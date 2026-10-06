@@ -1,0 +1,200 @@
+{{- if .Values.operators.model.enabled }}
+{{- $op := .Values.operators.model }}
+{{- $name := $op.name }}
+{{- $ns := .Values.global.namespace }}
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+  {{- with $op.irsaRoleArn }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ . | quote }}
+    {{- range $k, $v := $.Values.serviceAccount.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  {{- end }}
+---
+{{- end }}
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+rules:
+  # KOPF peering
+  - apiGroups: ["kopf.dev"]
+    resources: ["clusterkopfpeerings"]
+    verbs: ["list", "watch", "patch", "get", "create"]
+  # K8s events
+  - apiGroups: ["", "events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch", "get"]
+  # CRD discovery
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["list", "watch", "get"]
+  # ModelConfig + Registry
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["modelconfigs", "modelconfigs/status"]
+    verbs: ["list", "watch", "get", "patch", "update", "create", "delete"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["registries", "registries/status"]
+    verbs: ["list", "watch", "get", "patch", "update"]
+  # Namespaces (for namespace-scoped watching)
+  - apiGroups: [""]
+    # Cedar policy projection (a design note) writes the policy into a label-scoped ConfigMap in
+    # modaas-system for the PDP's watcher to hot-load. Without this the projection raised a bare
+    # ApiException that the code swallowed as "non-blocking", so per-tool authorization could never
+    # work in a chart-deployed cluster while the CRD kept accepting cedarPolicy as if it did.
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list", "watch", "get"]
+  # a design note Canvas-First TMF emission
+  - apiGroups: ["oda.tmforum.org"]
+    resources:
+      - "components"
+      - "components/status"
+      - "identityconfigs"
+      - "identityconfigs/status"
+      - "dependentapis"
+      - "dependentapis/status"
+      - "publishednotifications"
+      - "publishednotifications/status"
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # Istio CRD emission (per-asset routing, authz, egress, telemetry)
+  - apiGroups: ["networking.istio.io"]
+    resources: ["virtualservices", "serviceentries", "sidecars", "destinationrules"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # path). Emission is still gated at runtime by MODAAS_PROGRAM_AGENTGATEWAY, but the permission has to
+  # exist or the operator reports ProgramFailed with a 403 that looks like a code bug.
+  - apiGroups: ["agentgateway.dev"]
+    resources: ["agentgatewaymodels"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["security.istio.io"]
+    resources: ["authorizationpolicies", "peerauthentications", "requestauthentications"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["telemetry.istio.io"]
+    resources: ["telemetries"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # Istio LB DNS auto-resolution (a design note layer 2)
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $ns }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+spec:
+  replicas: {{ $op.replicas }}
+  selector:
+    matchLabels:
+      {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 8 }}
+        app.kubernetes.io/part-of: modaas-canvas
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ $name }}
+      containers:
+        - name: operator
+          image: {{ include "modaas.image" (dict "Values" .Values "Chart" .Chart "component" "model") }}
+          imagePullPolicy: {{ include "modaas.imagePullPolicy" (dict "Values" .Values "component" "model") }}
+          env:
+            # Opt-in: program the agentgateway dataplane from approved CRs (G06, step 1 of the
+            # never start being programmed silently under an existing install.
+            # WALKTHROUGH FIX (2026-09-02): these were declared with NO value:, so
+            # the container saw "" (falsy) and never programmed a route.
+            - name: MODAAS_PROGRAM_AGENTGATEWAY
+              value: {{ .Values.agentgatewayRoutes.enabled | default true | quote }}
+            - name: MODAAS_AGW_NAMESPACE
+              value: {{ .Values.agentgatewayRoutes.namespace | default "agentgateway-system" | quote }}
+            - name: MODAAS_AGW_GATEWAY
+              value: {{ .Values.agentgatewayRoutes.gateway | default "modaas-agw" | quote }}
+            # W4-C resource-side grants -> PDP. ModelConfig.spec.access.allowedConsumers
+            # is rendered to Cedar permits under policy_id model-<alias> while the model
+            # is Approved+unpaused, withdrawn otherwise. This is what the promoted identity
+            # hook (a hardening note, 2026-09-20) consults: with the hook on the llm listener and this
+            # OFF, every model call is "PolicyDenied: policy_id=model-<alias> not loaded"
+            # -- Cedar default-deny doing its job against a grant nobody projected.
+            - name: MODAAS_PROJECT_MODEL_GRANTS
+              value: {{ (.Values.modelGrants | default dict).project | default true | quote }}
+            - name: COMPONENT_NAMESPACE
+              value: {{ .Values.global.componentNamespace | quote }}
+            - name: LOGGING
+              value: {{ $op.logging | quote }}
+            - name: MODAAS_REGISTRY_MODE
+              value: {{ $op.registryMode | quote }}
+            - name: MODAAS_REGISTRY_REGION
+              value: {{ .Values.global.region | default "us-east-1" | quote }}
+            - name: AWS_DEFAULT_REGION
+              value: {{ required "global.aws.region must be set (--set-string global.aws.region=<region>)" .Values.global.aws.region | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.global.aws.region | quote }}
+            {{- with .Values.global.aws.accountId }}
+            - name: MODAAS_AWS_ACCOUNT_ID
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if $op.iamAllowlistRole }}
+            # D-8: the operator keeps an IAM Deny-NotResource policy on this
+            # role pinned to the APPROVED models' ARNs, so IAM follows
+            # governance without a human editing a policy. Unset means off --
+            # the operator writes no IAM at all.
+            - name: MODAAS_IAM_ALLOWLIST_ROLE
+              value: {{ $op.iamAllowlistRole | quote }}
+            {{- end }}
+            - name: KOPF_PEERING_NAME
+              value: {{ $op.peering.name | default "modaas-model" | quote }}
+            {{- with $op.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml $op.resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+      {{- with $op.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

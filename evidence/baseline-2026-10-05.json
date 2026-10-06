@@ -1,0 +1,12 @@
+{
+  "agents": {
+    "customer-experience-agent": "nemotron-super-120b",
+    "it-resolution-agent": "nemotron-nano-9b",
+    "network-resolution-agent": "nemotron-super-120b"
+  },
+  "expected": {
+    "S1-fronthaul-degradation": "auto-resolve",
+    "S2-transport-congestion": "gather-evidence",
+    "S3-restricted-change": "escalate"
+  }
+}

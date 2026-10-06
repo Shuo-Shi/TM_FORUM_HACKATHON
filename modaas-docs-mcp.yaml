@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kopf.zalando.org/last-handled-configuration: |
+      {"spec":{"replicas":1,"selector":{"matchLabels":{"app.kubernetes.io/name":"modaas-docs-mcp"}},"template":{"metadata":{"labels":{"app.kubernetes.io/name":"modaas-docs-mcp"}},"spec":{"volumes":[{"name":"app","configMap":{"name":"modaas-docs-mcp-app","defaultMode":420}},{"name":"idx-ai-canvas","configMap":{"name":"modaas-docs-index-ai-canvas","defaultMode":420}},{"name":"idx-modaas","configMap":{"name":"modaas-docs-index-modaas","defaultMode":420}},{"name":"idx-oda-canvas","configMap":{"name":"modaas-docs-index-oda-canvas","defaultMode":420}},{"name":"idx-workshop","configMap":{"name":"modaas-docs-index-workshop","defaultMode":420}}],"containers":[{"name":"server","image":"public.ecr.aws/docker/library/python:3.12-slim","command":["python3","/app/server.py"],"ports":[{"containerPort":8080,"protocol":"TCP"}],"env":[{"name":"INDEX_DIR","value":"/kb/index.d"},{"name":"PYTHONUNBUFFERED","value":"1"}],"resources":{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"128Mi"}},"volumeMounts":[{"name":"app","mountPath":"/app"},{"name":"idx-ai-canvas","mountPath":"/kb/index.d/ai-canvas.json.gz","subPath":"ai-canvas.json.gz"},{"name":"idx-modaas","mountPath":"/kb/index.d/modaas.json.gz","subPath":"modaas.json.gz"},{"name":"idx-oda-canvas","mountPath":"/kb/index.d/oda-canvas.json.gz","subPath":"oda-canvas.json.gz"},{"name":"idx-workshop","mountPath":"/kb/index.d/workshop.json.gz","subPath":"workshop.json.gz"}],"readinessProbe":{"httpGet":{"path":"/healthz","port":8080,"scheme":"HTTP"},"initialDelaySeconds":5,"timeoutSeconds":1,"periodSeconds":5,"successThreshold":1,"failureThreshold":3},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}},"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxUnavailable":"25%","maxSurge":"25%"}},"revisionHistoryLimit":10,"progressDeadlineSeconds":600},"metadata":{"labels":{"app.kubernetes.io/name":"modaas-docs-mcp","app.kubernetes.io/part-of":"modaas-workshop"},"annotations":{"deployment.kubernetes.io/revision":"1"}}}
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"modaas-docs-mcp","app.kubernetes.io/part-of":"modaas-workshop"},"name":"modaas-docs-mcp","namespace":"components"},"spec":{"replicas":1,"selector":{"matchLabels":{"app.kubernetes.io/name":"modaas-docs-mcp"}},"template":{"metadata":{"labels":{"app.kubernetes.io/name":"modaas-docs-mcp"}},"spec":{"containers":[{"command":["python3","/app/server.py"],"env":[{"name":"INDEX_DIR","value":"/kb/index.d"},{"name":"PYTHONUNBUFFERED","value":"1"}],"image":"public.ecr.aws/docker/library/python:3.12-slim","name":"server","ports":[{"containerPort":8080}],"readinessProbe":{"httpGet":{"path":"/healthz","port":8080},"initialDelaySeconds":5,"periodSeconds":5},"resources":{"limits":{"memory":"256Mi"},"requests":{"cpu":"50m","memory":"128Mi"}},"volumeMounts":[{"mountPath":"/app","name":"app"},{"mountPath":"/kb/index.d/ai-canvas.json.gz","name":"idx-ai-canvas","subPath":"ai-canvas.json.gz"},{"mountPath":"/kb/index.d/modaas.json.gz","name":"idx-modaas","subPath":"modaas.json.gz"},{"mountPath":"/kb/index.d/oda-canvas.json.gz","name":"idx-oda-canvas","subPath":"oda-canvas.json.gz"},{"mountPath":"/kb/index.d/workshop.json.gz","name":"idx-workshop","subPath":"workshop.json.gz"}]}],"volumes":[{"configMap":{"name":"modaas-docs-mcp-app"},"name":"app"},{"configMap":{"name":"modaas-docs-index-ai-canvas"},"name":"idx-ai-canvas"},{"configMap":{"name":"modaas-docs-index-modaas"},"name":"idx-modaas"},{"configMap":{"name":"modaas-docs-index-oda-canvas"},"name":"idx-oda-canvas"},{"configMap":{"name":"modaas-docs-index-workshop"},"name":"idx-workshop"}]}}}}
+  creationTimestamp: "2026-10-04T17:58:28Z"
+  generation: 2
+  labels:
+    app.kubernetes.io/name: modaas-docs-mcp
+    app.kubernetes.io/part-of: modaas-workshop
+  name: modaas-docs-mcp
+  namespace: components
+  resourceVersion: "178027"
+  uid: 3cf041fb-79a1-4b49-af54-eb01e8fc8ca5
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: modaas-docs-mcp
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: modaas-docs-mcp
+    spec:
+      containers:
+      - command:
+        - python3
+        - /app/server.py
+        env:
+        - name: INDEX_DIR
+          value: /kb/index.d
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        image: public.ecr.aws/docker/library/python:3.12-slim
+        imagePullPolicy: IfNotPresent
+        name: server
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 128Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app
+          name: app
+        - mountPath: /kb/index.d/ai-canvas.json.gz
+          name: idx-ai-canvas
+          subPath: ai-canvas.json.gz
+        - mountPath: /kb/index.d/modaas.json.gz
+          name: idx-modaas
+          subPath: modaas.json.gz
+        - mountPath: /kb/index.d/oda-canvas.json.gz
+          name: idx-oda-canvas
+          subPath: oda-canvas.json.gz
+        - mountPath: /kb/index.d/workshop.json.gz
+          name: idx-workshop
+          subPath: workshop.json.gz
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: modaas-docs-mcp-app
+        name: app
+      - configMap:
+          defaultMode: 420
+          name: modaas-docs-index-ai-canvas
+        name: idx-ai-canvas
+      - configMap:
+          defaultMode: 420
+          name: modaas-docs-index-modaas
+        name: idx-modaas
+      - configMap:
+          defaultMode: 420
+          name: modaas-docs-index-oda-canvas
+        name: idx-oda-canvas
+      - configMap:
+          defaultMode: 420
+          name: modaas-docs-index-workshop
+        name: idx-workshop
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-10-04T17:58:39Z"
+    lastUpdateTime: "2026-10-04T17:58:39Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-10-04T17:58:28Z"
+    lastUpdateTime: "2026-10-04T17:58:39Z"
+    message: ReplicaSet "modaas-docs-mcp-787d8dfb7f" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  terminatingReplicas: 0
+  updatedReplicas: 1

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velocityx-filesystem
+  namespace: components
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: velocityx-filesystem
+
+  template:
+    metadata:
+      labels:
+        app: velocityx-filesystem
+
+    spec:
+      containers:
+      - name: server
+        image: public.ecr.aws/docker/library/python:3.12-slim
+
+        command:
+        - python3
+        - /app/server.py
+
+        ports:
+        - containerPort: 8080
+
+        volumeMounts:
+        - name: app
+          mountPath: /app
+
+      volumes:
+      - name: app
+        configMap:
+          name: velocityx-filesystem-app

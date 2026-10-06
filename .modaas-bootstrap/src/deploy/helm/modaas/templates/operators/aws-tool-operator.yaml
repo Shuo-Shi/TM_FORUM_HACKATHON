@@ -1,0 +1,174 @@
+{{- if .Values.operators.tool.enabled }}
+{{- $op := .Values.operators.tool }}
+{{- $name := $op.name }}
+{{- $ns := .Values.global.namespace }}
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+  {{- with $op.irsaRoleArn }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ . | quote }}
+    {{- range $k, $v := $.Values.serviceAccount.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  {{- end }}
+---
+{{- end }}
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["kopf.dev"]
+    resources: ["clusterkopfpeerings"]
+    verbs: ["list", "watch", "patch", "get", "create"]
+  - apiGroups: ["", "events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch", "get"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["toolconfigs", "toolconfigs/status"]
+    verbs: ["list", "watch", "get", "patch", "update", "create", "delete"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["registries", "registries/status"]
+    verbs: ["list", "watch", "get", "patch", "update"]
+  - apiGroups: [""]
+    # Cedar policy projection (a design note) writes the policy into a label-scoped ConfigMap in
+    # modaas-system for the PDP's watcher to hot-load. Without this the projection raised a bare
+    # ApiException that the code swallowed as "non-blocking", so per-tool authorization could never
+    # work in a chart-deployed cluster while the CRD kept accepting cedarPolicy as if it did.
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list", "watch", "get"]
+  # a design note Canvas-First TMF emission
+  - apiGroups: ["oda.tmforum.org"]
+    resources:
+      - "components"
+      - "components/status"
+      - "identityconfigs"
+      - "identityconfigs/status"
+      - "dependentapis"
+      - "dependentapis/status"
+      - "publishednotifications"
+      - "publishednotifications/status"
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["networking.istio.io"]
+    resources: ["virtualservices", "serviceentries", "sidecars", "destinationrules"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # path). Emission is still gated at runtime by MODAAS_PROGRAM_AGENTGATEWAY, but the permission has to
+  # exist or the operator reports ProgramFailed with a 403 that looks like a code bug.
+  - apiGroups: ["agentgateway.dev"]
+    resources: ["agentgatewaymodels", "agentgatewaybackends"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["security.istio.io"]
+    resources: ["authorizationpolicies", "peerauthentications", "requestauthentications"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["telemetry.istio.io"]
+    resources: ["telemetries"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $ns }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+spec:
+  replicas: {{ $op.replicas }}
+  selector:
+    matchLabels:
+      {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 8 }}
+        app.kubernetes.io/part-of: modaas-canvas
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ $name }}
+      containers:
+        - name: operator
+          image: {{ include "modaas.image" (dict "Values" .Values "Chart" .Chart "component" "tool") }}
+          imagePullPolicy: {{ include "modaas.imagePullPolicy" (dict "Values" .Values "component" "tool") }}
+          env:
+            - name: COMPONENT_NAMESPACE
+              value: {{ .Values.global.componentNamespace | quote }}
+            - name: LOGGING
+              value: {{ $op.logging | quote }}
+            - name: MODAAS_REGISTRY_MODE
+              value: {{ $op.registryMode | quote }}
+            - name: MODAAS_REGISTRY_REGION
+              value: {{ .Values.global.region | default "us-east-1" | quote }}
+            - name: AWS_DEFAULT_REGION
+              value: {{ required "global.aws.region must be set (--set-string global.aws.region=<region>)" .Values.global.aws.region | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.global.aws.region | quote }}
+            {{- with .Values.global.aws.accountId }}
+            - name: MODAAS_AWS_ACCOUNT_ID
+              value: {{ . | quote }}
+            {{- end }}
+            - name: KOPF_PEERING_NAME
+              value: {{ $op.peering.name | default "modaas-tool" | quote }}
+            {{- with .Values.agentCoreGateway.gatewayId }}
+            - name: MODAAS_AGENTCORE_GATEWAY_ID
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with $op.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml $op.resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+      {{- with $op.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

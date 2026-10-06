@@ -1,0 +1,4145 @@
+# U10 (usage-and-cost): the bootstrap PUBLIC_CATALOGUE model-cost source.
+#
+# Generated FROM scripts/model-cost-catalog/build_model_cost_catalog.py's
+# output -- do not hand-edit `data.catalog.json` here; regenerate the
+# transform's output and paste it in, so the ConfigMap and the script that
+# produced it never drift.
+#
+# Content is litellm's own MIT-licensed public price data (a bootstrap rate
+# source per docs/DATAPLANE-DIRECTION.md §8 and STATUS.md's Dataplane
+# Direction), transformed into agentgateway's native Catalog JSON shape.
+# Contains no CR-declared enterprise rate (see this unit's security-design.md
+# SD-3) -- ordinary namespace-scoped ConfigMap RBAC applies.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: modaas-model-cost-catalog
+  namespace: agentgateway-system
+data:
+  catalog.json: |
+    {
+      "providers": {
+        "anthropic": {
+          "models": {
+            "claude-3-7-sonnet-20250219": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "claude-3-haiku-20240307": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.25"
+              }
+            },
+            "claude-3-opus-20240229": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "claude-4-opus-20250514": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "claude-4-sonnet-20250514": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "claude-fable-5": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "claude-fable-5-1": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "claude-haiku-4-5": {
+              "rates": {
+                "input": "1",
+                "output": "5"
+              }
+            },
+            "claude-haiku-4-5-20251001": {
+              "rates": {
+                "input": "1",
+                "output": "5"
+              }
+            },
+            "claude-mythos-5": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "claude-mythos-preview": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "claude-opus-4-1": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "claude-opus-4-1-20250805": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "claude-opus-4-20250514": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "claude-opus-4-5": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-opus-4-5-20251101": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-opus-4-6": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-opus-4-6-20260205": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-opus-4-7": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-opus-4-7-20260416": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-opus-4-8": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-opus-5": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "claude-sonnet-4-20250514": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "claude-sonnet-4-5": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "claude-sonnet-4-5-20250929": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "claude-sonnet-4-6": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "claude-sonnet-5": {
+              "rates": {
+                "input": "2",
+                "output": "10"
+              }
+            }
+          }
+        },
+        "aws.bedrock": {
+          "models": {
+            "ai21.j2-mid-v1": {
+              "rates": {
+                "input": "12.5",
+                "output": "12.5"
+              }
+            },
+            "ai21.j2-ultra-v1": {
+              "rates": {
+                "input": "18.8",
+                "output": "18.8"
+              }
+            },
+            "ai21.jamba-1-5-large-v1:0": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "ai21.jamba-1-5-mini-v1:0": {
+              "rates": {
+                "input": "0.2",
+                "output": "0.4"
+              }
+            },
+            "ai21.jamba-instruct-v1:0": {
+              "rates": {
+                "input": "0.5",
+                "output": "0.7"
+              }
+            },
+            "amazon.nova-2-lite-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "amazon.nova-2-pro-preview-20251202-v1:0": {
+              "rates": {
+                "input": "2.1875",
+                "output": "17.5"
+              }
+            },
+            "amazon.nova-lite-v1:0": {
+              "rates": {
+                "input": "0.06",
+                "output": "0.24"
+              }
+            },
+            "amazon.nova-micro-v1:0": {
+              "rates": {
+                "input": "0.035",
+                "output": "0.14"
+              }
+            },
+            "amazon.nova-pro-v1:0": {
+              "rates": {
+                "input": "0.8",
+                "output": "3.2"
+              }
+            },
+            "amazon.titan-text-express-v1": {
+              "rates": {
+                "input": "1.3",
+                "output": "1.7"
+              }
+            },
+            "amazon.titan-text-lite-v1": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.4"
+              }
+            },
+            "amazon.titan-text-premier-v1:0": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "anthropic.claude-3-5-haiku-20241022-v1:0": {
+              "rates": {
+                "input": "0.8",
+                "output": "4"
+              }
+            },
+            "anthropic.claude-3-5-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "anthropic.claude-3-5-sonnet-20241022-v2:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "anthropic.claude-3-7-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "anthropic.claude-3-7-sonnet-20250219-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "anthropic.claude-3-haiku-20240307-v1:0": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.25"
+              }
+            },
+            "anthropic.claude-3-opus-20240229-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "anthropic.claude-3-sonnet-20240229-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "anthropic.claude-fable-5": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "anthropic.claude-fable-5-1": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1",
+                "output": "5"
+              }
+            },
+            "anthropic.claude-haiku-4-5@20251001": {
+              "rates": {
+                "input": "1",
+                "output": "5"
+              }
+            },
+            "anthropic.claude-instant-v1": {
+              "rates": {
+                "input": "0.8",
+                "output": "2.4"
+              }
+            },
+            "anthropic.claude-mythos-preview": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "anthropic.claude-opus-4-1-20250805-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "anthropic.claude-opus-4-20250514-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "anthropic.claude-opus-4-5-20251101-v1:0": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "anthropic.claude-opus-4-6-v1": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "anthropic.claude-opus-4-7": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "anthropic.claude-opus-5": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "anthropic.claude-sonnet-4-20250514-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "anthropic.claude-sonnet-4-6": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2",
+                "output": "10"
+              }
+            },
+            "anthropic.claude-v1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "anthropic.claude-v2:1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "apac.amazon.nova-2-lite-v1:0": {
+              "rates": {
+                "input": "0.33",
+                "output": "2.75"
+              }
+            },
+            "apac.amazon.nova-2-pro-preview-20251202-v1:0": {
+              "rates": {
+                "input": "2.1875",
+                "output": "17.5"
+              }
+            },
+            "apac.amazon.nova-lite-v1:0": {
+              "rates": {
+                "input": "0.063",
+                "output": "0.252"
+              }
+            },
+            "apac.amazon.nova-micro-v1:0": {
+              "rates": {
+                "input": "0.037",
+                "output": "0.148"
+              }
+            },
+            "apac.amazon.nova-pro-v1:0": {
+              "rates": {
+                "input": "0.84",
+                "output": "3.36"
+              }
+            },
+            "apac.anthropic.claude-3-5-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "apac.anthropic.claude-3-5-sonnet-20241022-v2:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "apac.anthropic.claude-3-haiku-20240307-v1:0": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.25"
+              }
+            },
+            "apac.anthropic.claude-3-sonnet-20240229-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "apac.anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1.1",
+                "output": "5.5"
+              }
+            },
+            "apac.anthropic.claude-sonnet-4-20250514-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "au.anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1.1",
+                "output": "5.5"
+              }
+            },
+            "au.anthropic.claude-opus-4-6-v1": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "au.anthropic.claude-opus-4-7": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "au.anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "au.anthropic.claude-opus-5": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "au.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "au.anthropic.claude-sonnet-4-6": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "au.anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2.2",
+                "output": "11"
+              }
+            },
+            "bedrock/ap-northeast-1/anthropic.claude-instant-v1": {
+              "rates": {
+                "input": "2.23",
+                "output": "7.55"
+              }
+            },
+            "bedrock/ap-northeast-1/anthropic.claude-v1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/ap-northeast-1/anthropic.claude-v2:1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/ap-northeast-1/deepseek.v3.2": {
+              "rates": {
+                "input": "0.74",
+                "output": "2.22"
+              }
+            },
+            "bedrock/ap-northeast-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-northeast-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-northeast-1/moonshotai.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.73",
+                "output": "3.03"
+              }
+            },
+            "bedrock/ap-northeast-1/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.72",
+                "output": "3.6"
+              }
+            },
+            "bedrock/ap-northeast-1/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.6",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-south-1/deepseek.v3.2": {
+              "rates": {
+                "input": "0.74",
+                "output": "2.22"
+              }
+            },
+            "bedrock/ap-south-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "3.18",
+                "output": "4.2"
+              }
+            },
+            "bedrock/ap-south-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.36",
+                "output": "0.72"
+              }
+            },
+            "bedrock/ap-south-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-south-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-south-1/moonshotai.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.71",
+                "output": "2.94"
+              }
+            },
+            "bedrock/ap-south-1/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.72",
+                "output": "3.6"
+              }
+            },
+            "bedrock/ap-south-1/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.6",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-southeast-2/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.309",
+                "output": "1.236"
+              }
+            },
+            "bedrock/ap-southeast-3/deepseek.v3.2": {
+              "rates": {
+                "input": "0.74",
+                "output": "2.22"
+              }
+            },
+            "bedrock/ap-southeast-3/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-southeast-3/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ap-southeast-3/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.72",
+                "output": "3.6"
+              }
+            },
+            "bedrock/ap-southeast-3/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.6",
+                "output": "1.44"
+              }
+            },
+            "bedrock/ca-central-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "3.05",
+                "output": "4.03"
+              }
+            },
+            "bedrock/ca-central-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.35",
+                "output": "0.69"
+              }
+            },
+            "bedrock/eu-central-1/anthropic.claude-instant-v1": {
+              "rates": {
+                "input": "2.48",
+                "output": "8.38"
+              }
+            },
+            "bedrock/eu-central-1/anthropic.claude-v1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/eu-central-1/anthropic.claude-v2:1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/eu-central-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-central-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-central-1/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.6",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-north-1/deepseek.v3.2": {
+              "rates": {
+                "input": "0.74",
+                "output": "2.22"
+              }
+            },
+            "bedrock/eu-north-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-north-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-north-1/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.72",
+                "output": "3.6"
+              }
+            },
+            "bedrock/eu-south-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-south-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-south-1/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.6",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-west-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "2.86",
+                "output": "3.78"
+              }
+            },
+            "bedrock/eu-west-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.32",
+                "output": "0.65"
+              }
+            },
+            "bedrock/eu-west-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-west-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-west-1/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.6",
+                "output": "1.44"
+              }
+            },
+            "bedrock/eu-west-2/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "3.45",
+                "output": "4.55"
+              }
+            },
+            "bedrock/eu-west-2/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.39",
+                "output": "0.78"
+              }
+            },
+            "bedrock/eu-west-2/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.47",
+                "output": "1.86"
+              }
+            },
+            "bedrock/eu-west-2/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.47",
+                "output": "1.86"
+              }
+            },
+            "bedrock/eu-west-2/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.78",
+                "output": "1.86"
+              }
+            },
+            "bedrock/eu-west-3/mistral.mistral-7b-instruct-v0:2": {
+              "rates": {
+                "input": "0.2",
+                "output": "0.26"
+              }
+            },
+            "bedrock/eu-west-3/mistral.mistral-large-2402-v1:0": {
+              "rates": {
+                "input": "10.4",
+                "output": "31.2"
+              }
+            },
+            "bedrock/eu-west-3/mistral.mixtral-8x7b-instruct-v0:1": {
+              "rates": {
+                "input": "0.59",
+                "output": "0.91"
+              }
+            },
+            "bedrock/invoke/anthropic.claude-3-5-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "bedrock/moonshotai.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.73",
+                "output": "3.03"
+              }
+            },
+            "bedrock/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.6",
+                "output": "3.03"
+              }
+            },
+            "bedrock/sa-east-1/deepseek.v3.2": {
+              "rates": {
+                "input": "0.74",
+                "output": "2.22"
+              }
+            },
+            "bedrock/sa-east-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "4.45",
+                "output": "5.88"
+              }
+            },
+            "bedrock/sa-east-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.01"
+              }
+            },
+            "bedrock/sa-east-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/sa-east-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.36",
+                "output": "1.44"
+              }
+            },
+            "bedrock/sa-east-1/moonshotai.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.73",
+                "output": "3.03"
+              }
+            },
+            "bedrock/sa-east-1/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.72",
+                "output": "3.6"
+              }
+            },
+            "bedrock/sa-east-1/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.6",
+                "output": "1.44"
+              }
+            },
+            "bedrock/us-east-1/anthropic.claude-instant-v1": {
+              "rates": {
+                "input": "0.8",
+                "output": "2.4"
+              }
+            },
+            "bedrock/us-east-1/anthropic.claude-v1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/us-east-1/anthropic.claude-v2:1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/us-east-1/deepseek.v3.2": {
+              "rates": {
+                "input": "0.62",
+                "output": "1.85"
+              }
+            },
+            "bedrock/us-east-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "2.65",
+                "output": "3.5"
+              }
+            },
+            "bedrock/us-east-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.6"
+              }
+            },
+            "bedrock/us-east-1/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-east-1/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-east-1/mistral.mistral-7b-instruct-v0:2": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.2"
+              }
+            },
+            "bedrock/us-east-1/mistral.mistral-large-2402-v1:0": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/us-east-1/mistral.mixtral-8x7b-instruct-v0:1": {
+              "rates": {
+                "input": "0.45",
+                "output": "0.7"
+              }
+            },
+            "bedrock/us-east-1/moonshotai.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.5"
+              }
+            },
+            "bedrock/us-east-1/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.6",
+                "output": "3"
+              }
+            },
+            "bedrock/us-east-1/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-east-1/zai.glm-5": {
+              "rates": {
+                "input": "1",
+                "output": "3.2"
+              }
+            },
+            "bedrock/us-east-2/deepseek.v3.2": {
+              "rates": {
+                "input": "0.62",
+                "output": "1.85"
+              }
+            },
+            "bedrock/us-east-2/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-east-2/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-east-2/moonshotai.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.5"
+              }
+            },
+            "bedrock/us-east-2/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.6",
+                "output": "3"
+              }
+            },
+            "bedrock/us-east-2/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-gov-east-1/amazon.nova-pro-v1:0": {
+              "rates": {
+                "input": "0.96",
+                "output": "3.84"
+              }
+            },
+            "bedrock/us-gov-east-1/amazon.titan-text-express-v1": {
+              "rates": {
+                "input": "1.3",
+                "output": "1.7"
+              }
+            },
+            "bedrock/us-gov-east-1/amazon.titan-text-lite-v1": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.4"
+              }
+            },
+            "bedrock/us-gov-east-1/amazon.titan-text-premier-v1:0": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "bedrock/us-gov-east-1/anthropic.claude-3-5-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "bedrock/us-gov-east-1/anthropic.claude-3-haiku-20240307-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.5"
+              }
+            },
+            "bedrock/us-gov-east-1/anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1.2",
+                "output": "6"
+              }
+            },
+            "bedrock/us-gov-east-1/anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "6",
+                "output": "30"
+              }
+            },
+            "bedrock/us-gov-east-1/anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "bedrock/us-gov-east-1/anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2.4",
+                "output": "12"
+              }
+            },
+            "bedrock/us-gov-east-1/claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "bedrock/us-gov-east-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "2.65",
+                "output": "3.5"
+              }
+            },
+            "bedrock/us-gov-east-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.65"
+              }
+            },
+            "bedrock/us-gov-east-1/nvidia.nemotron-nano-12b-v2": {
+              "rates": {
+                "input": "0.24",
+                "output": "0.72"
+              }
+            },
+            "bedrock/us-gov-east-1/nvidia.nemotron-nano-3-30b": {
+              "rates": {
+                "input": "0.072",
+                "output": "0.288"
+              }
+            },
+            "bedrock/us-gov-east-1/nvidia.nemotron-super-3-120b": {
+              "rates": {
+                "input": "0.18",
+                "output": "0.78"
+              }
+            },
+            "bedrock/us-gov-east-1/openai.gpt-oss-120b-1:0": {
+              "rates": {
+                "input": "0.18",
+                "output": "0.72"
+              }
+            },
+            "bedrock/us-gov-east-1/openai.gpt-oss-20b-1:0": {
+              "rates": {
+                "input": "0.084",
+                "output": "0.36"
+              }
+            },
+            "bedrock/us-gov-west-1/amazon.nova-pro-v1:0": {
+              "rates": {
+                "input": "0.96",
+                "output": "3.84"
+              }
+            },
+            "bedrock/us-gov-west-1/amazon.titan-text-express-v1": {
+              "rates": {
+                "input": "1.3",
+                "output": "1.7"
+              }
+            },
+            "bedrock/us-gov-west-1/amazon.titan-text-lite-v1": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.4"
+              }
+            },
+            "bedrock/us-gov-west-1/amazon.titan-text-premier-v1:0": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "bedrock/us-gov-west-1/anthropic.claude-3-5-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "bedrock/us-gov-west-1/anthropic.claude-3-7-sonnet-20250219-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "bedrock/us-gov-west-1/anthropic.claude-3-haiku-20240307-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.5"
+              }
+            },
+            "bedrock/us-gov-west-1/anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1.2",
+                "output": "6"
+              }
+            },
+            "bedrock/us-gov-west-1/anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "6",
+                "output": "30"
+              }
+            },
+            "bedrock/us-gov-west-1/anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "bedrock/us-gov-west-1/anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2.4",
+                "output": "12"
+              }
+            },
+            "bedrock/us-gov-west-1/claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "bedrock/us-gov-west-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "2.65",
+                "output": "3.5"
+              }
+            },
+            "bedrock/us-gov-west-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.6"
+              }
+            },
+            "bedrock/us-gov-west-1/nvidia.nemotron-nano-12b-v2": {
+              "rates": {
+                "input": "0.24",
+                "output": "0.72"
+              }
+            },
+            "bedrock/us-gov-west-1/nvidia.nemotron-nano-3-30b": {
+              "rates": {
+                "input": "0.072",
+                "output": "0.288"
+              }
+            },
+            "bedrock/us-gov-west-1/nvidia.nemotron-super-3-120b": {
+              "rates": {
+                "input": "0.18",
+                "output": "0.78"
+              }
+            },
+            "bedrock/us-gov-west-1/openai.gpt-oss-120b-1:0": {
+              "rates": {
+                "input": "0.18",
+                "output": "0.72"
+              }
+            },
+            "bedrock/us-gov-west-1/openai.gpt-oss-20b-1:0": {
+              "rates": {
+                "input": "0.084",
+                "output": "0.36"
+              }
+            },
+            "bedrock/us-west-1/meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "2.65",
+                "output": "3.5"
+              }
+            },
+            "bedrock/us-west-1/meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.6"
+              }
+            },
+            "bedrock/us-west-2/anthropic.claude-instant-v1": {
+              "rates": {
+                "input": "0.8",
+                "output": "2.4"
+              }
+            },
+            "bedrock/us-west-2/anthropic.claude-v1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/us-west-2/anthropic.claude-v2:1": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/us-west-2/deepseek.v3.2": {
+              "rates": {
+                "input": "0.62",
+                "output": "1.85"
+              }
+            },
+            "bedrock/us-west-2/minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-west-2/minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-west-2/mistral.mistral-7b-instruct-v0:2": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.2"
+              }
+            },
+            "bedrock/us-west-2/mistral.mistral-large-2402-v1:0": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "bedrock/us-west-2/mistral.mixtral-8x7b-instruct-v0:1": {
+              "rates": {
+                "input": "0.45",
+                "output": "0.7"
+              }
+            },
+            "bedrock/us-west-2/moonshotai.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.5"
+              }
+            },
+            "bedrock/us-west-2/moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.6",
+                "output": "3"
+              }
+            },
+            "bedrock/us-west-2/qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.2"
+              }
+            },
+            "bedrock/us-west-2/zai.glm-5": {
+              "rates": {
+                "input": "1",
+                "output": "3.2"
+              }
+            },
+            "bedrock/us.anthropic.claude-3-5-haiku-20241022-v1:0": {
+              "rates": {
+                "input": "0.8",
+                "output": "4"
+              }
+            },
+            "claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "cohere.command-light-text-v14": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.6"
+              }
+            },
+            "cohere.command-r-plus-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "cohere.command-r-v1:0": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "cohere.command-text-v14": {
+              "rates": {
+                "input": "1.5",
+                "output": "2"
+              }
+            },
+            "deepseek.v3-v1:0": {
+              "rates": {
+                "input": "0.58",
+                "output": "1.68"
+              }
+            },
+            "deepseek.v3.2": {
+              "rates": {
+                "input": "0.62",
+                "output": "1.85"
+              }
+            },
+            "eu.amazon.nova-2-lite-v1:0": {
+              "rates": {
+                "input": "0.33",
+                "output": "2.75"
+              }
+            },
+            "eu.amazon.nova-2-pro-preview-20251202-v1:0": {
+              "rates": {
+                "input": "2.1875",
+                "output": "17.5"
+              }
+            },
+            "eu.amazon.nova-lite-v1:0": {
+              "rates": {
+                "input": "0.078",
+                "output": "0.312"
+              }
+            },
+            "eu.amazon.nova-micro-v1:0": {
+              "rates": {
+                "input": "0.046",
+                "output": "0.184"
+              }
+            },
+            "eu.amazon.nova-pro-v1:0": {
+              "rates": {
+                "input": "1.05",
+                "output": "4.2"
+              }
+            },
+            "eu.anthropic.claude-3-5-haiku-20241022-v1:0": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.25"
+              }
+            },
+            "eu.anthropic.claude-3-5-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "eu.anthropic.claude-3-5-sonnet-20241022-v2:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "eu.anthropic.claude-3-7-sonnet-20250219-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "eu.anthropic.claude-3-haiku-20240307-v1:0": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.25"
+              }
+            },
+            "eu.anthropic.claude-3-opus-20240229-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "eu.anthropic.claude-3-sonnet-20240229-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "eu.anthropic.claude-fable-5": {
+              "rates": {
+                "input": "11",
+                "output": "55"
+              }
+            },
+            "eu.anthropic.claude-fable-5-1": {
+              "rates": {
+                "input": "11",
+                "output": "55"
+              }
+            },
+            "eu.anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1.1",
+                "output": "5.5"
+              }
+            },
+            "eu.anthropic.claude-opus-4-1-20250805-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "eu.anthropic.claude-opus-4-20250514-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "eu.anthropic.claude-opus-4-5-20251101-v1:0": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "eu.anthropic.claude-opus-4-6-v1": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "eu.anthropic.claude-opus-4-7": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "eu.anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "eu.anthropic.claude-opus-5": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "eu.anthropic.claude-sonnet-4-20250514-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "eu.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "eu.anthropic.claude-sonnet-4-6": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "eu.anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2.2",
+                "output": "11"
+              }
+            },
+            "eu.deepseek.v3.2": {
+              "rates": {
+                "input": "0.74",
+                "output": "2.22"
+              }
+            },
+            "eu.meta.llama3-2-1b-instruct-v1:0": {
+              "rates": {
+                "input": "0.13",
+                "output": "0.13"
+              }
+            },
+            "eu.meta.llama3-2-3b-instruct-v1:0": {
+              "rates": {
+                "input": "0.19",
+                "output": "0.19"
+              }
+            },
+            "eu.mistral.pixtral-large-2502-v1:0": {
+              "rates": {
+                "input": "2",
+                "output": "6"
+              }
+            },
+            "global.amazon.nova-2-lite-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "global.anthropic.claude-fable-5": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "global.anthropic.claude-fable-5-1": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "global.anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1",
+                "output": "5"
+              }
+            },
+            "global.anthropic.claude-opus-4-5-20251101-v1:0": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "global.anthropic.claude-opus-4-6-v1": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "global.anthropic.claude-opus-4-7": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "global.anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "global.anthropic.claude-opus-5": {
+              "rates": {
+                "input": "5",
+                "output": "25"
+              }
+            },
+            "global.anthropic.claude-sonnet-4-20250514-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "global.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "global.anthropic.claude-sonnet-4-6": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "global.anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2",
+                "output": "10"
+              }
+            },
+            "global.openai.gpt-5.6-luna": {
+              "rates": {
+                "input": "0.2",
+                "output": "1.2"
+              }
+            },
+            "global.openai.gpt-5.6-sol": {
+              "rates": {
+                "input": "4",
+                "output": "20"
+              }
+            },
+            "global.openai.gpt-5.6-terra": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "global.xai.grok-4.6": {
+              "rates": {
+                "input": "2",
+                "output": "6"
+              }
+            },
+            "google.gemma-3-12b-it": {
+              "rates": {
+                "input": "0.09",
+                "output": "0.29"
+              }
+            },
+            "google.gemma-3-27b-it": {
+              "rates": {
+                "input": "0.23",
+                "output": "0.38"
+              }
+            },
+            "google.gemma-3-4b-it": {
+              "rates": {
+                "input": "0.04",
+                "output": "0.08"
+              }
+            },
+            "jp.anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1.1",
+                "output": "5.5"
+              }
+            },
+            "jp.anthropic.claude-opus-4-7": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "jp.anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "jp.anthropic.claude-opus-5": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "jp.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "jp.anthropic.claude-sonnet-4-6": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "jp.anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2.2",
+                "output": "11"
+              }
+            },
+            "meta.llama2-13b-chat-v1": {
+              "rates": {
+                "input": "0.75",
+                "output": "1"
+              }
+            },
+            "meta.llama2-70b-chat-v1": {
+              "rates": {
+                "input": "1.95",
+                "output": "2.56"
+              }
+            },
+            "meta.llama3-1-405b-instruct-v1:0": {
+              "rates": {
+                "input": "5.32",
+                "output": "16"
+              }
+            },
+            "meta.llama3-1-70b-instruct-v1:0": {
+              "rates": {
+                "input": "0.99",
+                "output": "0.99"
+              }
+            },
+            "meta.llama3-1-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.22",
+                "output": "0.22"
+              }
+            },
+            "meta.llama3-2-11b-instruct-v1:0": {
+              "rates": {
+                "input": "0.35",
+                "output": "0.35"
+              }
+            },
+            "meta.llama3-2-1b-instruct-v1:0": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.1"
+              }
+            },
+            "meta.llama3-2-3b-instruct-v1:0": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.15"
+              }
+            },
+            "meta.llama3-2-90b-instruct-v1:0": {
+              "rates": {
+                "input": "2",
+                "output": "2"
+              }
+            },
+            "meta.llama3-3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "0.72",
+                "output": "0.72"
+              }
+            },
+            "meta.llama3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "2.65",
+                "output": "3.5"
+              }
+            },
+            "meta.llama3-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.3",
+                "output": "0.6"
+              }
+            },
+            "meta.llama4-maverick-17b-instruct-v1:0": {
+              "rates": {
+                "input": "0.24",
+                "output": "0.97"
+              }
+            },
+            "meta.llama4-scout-17b-instruct-v1:0": {
+              "rates": {
+                "input": "0.17",
+                "output": "0.66"
+              }
+            },
+            "minimax.minimax-m2": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "minimax.minimax-m2.1": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "minimax.minimax-m2.5": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "mistral.devstral-2-123b": {
+              "rates": {
+                "input": "0.4",
+                "output": "2"
+              }
+            },
+            "mistral.magistral-small-2509": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "mistral.ministral-3-14b-instruct": {
+              "rates": {
+                "input": "0.2",
+                "output": "0.2"
+              }
+            },
+            "mistral.ministral-3-3b-instruct": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.1"
+              }
+            },
+            "mistral.ministral-3-8b-instruct": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.15"
+              }
+            },
+            "mistral.mistral-7b-instruct-v0:2": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.2"
+              }
+            },
+            "mistral.mistral-large-2402-v1:0": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "mistral.mistral-large-2407-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "9"
+              }
+            },
+            "mistral.mistral-large-3-675b-instruct": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "mistral.mistral-small-2402-v1:0": {
+              "rates": {
+                "input": "1",
+                "output": "3"
+              }
+            },
+            "mistral.mixtral-8x7b-instruct-v0:1": {
+              "rates": {
+                "input": "0.45",
+                "output": "0.7"
+              }
+            },
+            "mistral.voxtral-mini-3b-2507": {
+              "rates": {
+                "input": "0.04",
+                "output": "0.04"
+              }
+            },
+            "mistral.voxtral-small-24b-2507": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.3"
+              }
+            },
+            "moonshot.kimi-k2-thinking": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.5"
+              }
+            },
+            "moonshotai.kimi-k2.5": {
+              "rates": {
+                "input": "0.6",
+                "output": "3"
+              }
+            },
+            "nvidia.nemotron-nano-12b-v2": {
+              "rates": {
+                "input": "0.2",
+                "output": "0.6"
+              }
+            },
+            "nvidia.nemotron-nano-3-30b": {
+              "rates": {
+                "input": "0.06",
+                "output": "0.24"
+              }
+            },
+            "nvidia.nemotron-nano-9b-v2": {
+              "rates": {
+                "input": "0.06",
+                "output": "0.23"
+              }
+            },
+            "nvidia.nemotron-super-3-120b": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.65"
+              }
+            },
+            "openai.gpt-oss-120b-1:0": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "openai.gpt-oss-20b-1:0": {
+              "rates": {
+                "input": "0.07",
+                "output": "0.3"
+              }
+            },
+            "openai.gpt-oss-safeguard-120b": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "openai.gpt-oss-safeguard-20b": {
+              "rates": {
+                "input": "0.07",
+                "output": "0.2"
+              }
+            },
+            "qwen.qwen3-235b-a22b-2507-v1:0": {
+              "rates": {
+                "input": "0.22",
+                "output": "0.88"
+              }
+            },
+            "qwen.qwen3-32b-v1:0": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "qwen.qwen3-coder-30b-a3b-v1:0": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "qwen.qwen3-coder-480b-a35b-v1:0": {
+              "rates": {
+                "input": "0.22",
+                "output": "1.8"
+              }
+            },
+            "qwen.qwen3-coder-next": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.2"
+              }
+            },
+            "qwen.qwen3-next-80b-a3b": {
+              "rates": {
+                "input": "0.15",
+                "output": "1.2"
+              }
+            },
+            "qwen.qwen3-vl-235b-a22b": {
+              "rates": {
+                "input": "0.53",
+                "output": "2.66"
+              }
+            },
+            "us-gov.anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "6",
+                "output": "30"
+              }
+            },
+            "us-gov.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.6",
+                "output": "18"
+              }
+            },
+            "us-gov.anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2.4",
+                "output": "12"
+              }
+            },
+            "us.amazon.nova-2-lite-v1:0": {
+              "rates": {
+                "input": "0.33",
+                "output": "2.75"
+              }
+            },
+            "us.amazon.nova-2-pro-preview-20251202-v1:0": {
+              "rates": {
+                "input": "2.1875",
+                "output": "17.5"
+              }
+            },
+            "us.amazon.nova-lite-v1:0": {
+              "rates": {
+                "input": "0.06",
+                "output": "0.24"
+              }
+            },
+            "us.amazon.nova-micro-v1:0": {
+              "rates": {
+                "input": "0.035",
+                "output": "0.14"
+              }
+            },
+            "us.amazon.nova-premier-v1:0": {
+              "rates": {
+                "input": "2.5",
+                "output": "12.5"
+              }
+            },
+            "us.amazon.nova-pro-v1:0": {
+              "rates": {
+                "input": "0.8",
+                "output": "3.2"
+              }
+            },
+            "us.anthropic.claude-3-5-haiku-20241022-v1:0": {
+              "rates": {
+                "input": "0.8",
+                "output": "4"
+              }
+            },
+            "us.anthropic.claude-3-5-sonnet-20240620-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "us.anthropic.claude-3-5-sonnet-20241022-v2:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "us.anthropic.claude-3-7-sonnet-20250219-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "us.anthropic.claude-3-haiku-20240307-v1:0": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.25"
+              }
+            },
+            "us.anthropic.claude-3-opus-20240229-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "us.anthropic.claude-3-sonnet-20240229-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "us.anthropic.claude-fable-5": {
+              "rates": {
+                "input": "11",
+                "output": "55"
+              }
+            },
+            "us.anthropic.claude-fable-5-1": {
+              "rates": {
+                "input": "11",
+                "output": "55"
+              }
+            },
+            "us.anthropic.claude-haiku-4-5-20251001-v1:0": {
+              "rates": {
+                "input": "1.1",
+                "output": "5.5"
+              }
+            },
+            "us.anthropic.claude-opus-4-1-20250805-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "us.anthropic.claude-opus-4-20250514-v1:0": {
+              "rates": {
+                "input": "15",
+                "output": "75"
+              }
+            },
+            "us.anthropic.claude-opus-4-5-20251101-v1:0": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "us.anthropic.claude-opus-4-6-v1": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "us.anthropic.claude-opus-4-7": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "us.anthropic.claude-opus-4-8": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "us.anthropic.claude-opus-5": {
+              "rates": {
+                "input": "5.5",
+                "output": "27.5"
+              }
+            },
+            "us.anthropic.claude-sonnet-4-20250514-v1:0": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "us.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "us.anthropic.claude-sonnet-4-6": {
+              "rates": {
+                "input": "3.3",
+                "output": "16.5"
+              }
+            },
+            "us.anthropic.claude-sonnet-5": {
+              "rates": {
+                "input": "2.2",
+                "output": "11"
+              }
+            },
+            "us.deepseek.r1-v1:0": {
+              "rates": {
+                "input": "1.35",
+                "output": "5.4"
+              }
+            },
+            "us.deepseek.v3.2": {
+              "rates": {
+                "input": "0.62",
+                "output": "1.85"
+              }
+            },
+            "us.meta.llama3-1-405b-instruct-v1:0": {
+              "rates": {
+                "input": "5.32",
+                "output": "16"
+              }
+            },
+            "us.meta.llama3-1-70b-instruct-v1:0": {
+              "rates": {
+                "input": "0.99",
+                "output": "0.99"
+              }
+            },
+            "us.meta.llama3-1-8b-instruct-v1:0": {
+              "rates": {
+                "input": "0.22",
+                "output": "0.22"
+              }
+            },
+            "us.meta.llama3-2-11b-instruct-v1:0": {
+              "rates": {
+                "input": "0.35",
+                "output": "0.35"
+              }
+            },
+            "us.meta.llama3-2-1b-instruct-v1:0": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.1"
+              }
+            },
+            "us.meta.llama3-2-3b-instruct-v1:0": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.15"
+              }
+            },
+            "us.meta.llama3-2-90b-instruct-v1:0": {
+              "rates": {
+                "input": "2",
+                "output": "2"
+              }
+            },
+            "us.meta.llama3-3-70b-instruct-v1:0": {
+              "rates": {
+                "input": "0.72",
+                "output": "0.72"
+              }
+            },
+            "us.meta.llama4-maverick-17b-instruct-v1:0": {
+              "rates": {
+                "input": "0.24",
+                "output": "0.97"
+              }
+            },
+            "us.meta.llama4-scout-17b-instruct-v1:0": {
+              "rates": {
+                "input": "0.17",
+                "output": "0.66"
+              }
+            },
+            "us.mistral.pixtral-large-2502-v1:0": {
+              "rates": {
+                "input": "2",
+                "output": "6"
+              }
+            },
+            "us.openai.gpt-5.6-luna": {
+              "rates": {
+                "input": "0.22",
+                "output": "1.32"
+              }
+            },
+            "us.openai.gpt-5.6-sol": {
+              "rates": {
+                "input": "4.4",
+                "output": "22"
+              }
+            },
+            "us.openai.gpt-5.6-terra": {
+              "rates": {
+                "input": "2.2",
+                "output": "13.2"
+              }
+            },
+            "us.writer.palmyra-x4-v1:0": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "us.writer.palmyra-x5-v1:0": {
+              "rates": {
+                "input": "0.6",
+                "output": "6"
+              }
+            },
+            "us.xai.grok-4.6": {
+              "rates": {
+                "input": "2.2",
+                "output": "6.6"
+              }
+            },
+            "writer.palmyra-x4-v1:0": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "writer.palmyra-x5-v1:0": {
+              "rates": {
+                "input": "0.6",
+                "output": "6"
+              }
+            },
+            "zai.glm-4.7": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.2"
+              }
+            },
+            "zai.glm-4.7-flash": {
+              "rates": {
+                "input": "0.07",
+                "output": "0.4"
+              }
+            },
+            "zai.glm-5": {
+              "rates": {
+                "input": "1",
+                "output": "3.2"
+              }
+            }
+          }
+        },
+        "azure": {
+          "models": {
+            "azure/command-r-plus": {
+              "rates": {
+                "input": "3",
+                "output": "15"
+              }
+            },
+            "azure/computer-use-preview": {
+              "rates": {
+                "input": "3",
+                "output": "12"
+              }
+            },
+            "azure/eu/gpt-4o-2024-08-06": {
+              "rates": {
+                "input": "2.75",
+                "output": "11"
+              }
+            },
+            "azure/eu/gpt-4o-2024-11-20": {
+              "rates": {
+                "input": "2.75",
+                "output": "11"
+              }
+            },
+            "azure/eu/gpt-4o-mini-2024-07-18": {
+              "rates": {
+                "input": "0.165",
+                "output": "0.66"
+              }
+            },
+            "azure/eu/gpt-5-2025-08-07": {
+              "rates": {
+                "input": "1.375",
+                "output": "11"
+              }
+            },
+            "azure/eu/gpt-5-mini-2025-08-07": {
+              "rates": {
+                "input": "0.275",
+                "output": "2.2"
+              }
+            },
+            "azure/eu/gpt-5-nano-2025-08-07": {
+              "rates": {
+                "input": "0.055",
+                "output": "0.44"
+              }
+            },
+            "azure/eu/gpt-5.1": {
+              "rates": {
+                "input": "1.38",
+                "output": "11"
+              }
+            },
+            "azure/eu/gpt-5.1-chat": {
+              "rates": {
+                "input": "1.38",
+                "output": "11"
+              }
+            },
+            "azure/eu/gpt-5.4": {
+              "rates": {
+                "input": "2.75",
+                "output": "16.5"
+              }
+            },
+            "azure/eu/gpt-5.4-2026-03-05": {
+              "rates": {
+                "input": "2.75",
+                "output": "16.5"
+              }
+            },
+            "azure/eu/gpt-5.5": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/eu/gpt-5.5-2026-04-23": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/eu/gpt-5.6": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/eu/gpt-5.6-luna": {
+              "rates": {
+                "input": "0.22",
+                "output": "1.32"
+              }
+            },
+            "azure/eu/gpt-5.6-sol": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/eu/gpt-5.6-terra": {
+              "rates": {
+                "input": "2.2",
+                "output": "13.2"
+              }
+            },
+            "azure/eu/o1-2024-12-17": {
+              "rates": {
+                "input": "16.5",
+                "output": "66"
+              }
+            },
+            "azure/eu/o1-mini-2024-09-12": {
+              "rates": {
+                "input": "1.21",
+                "output": "4.84"
+              }
+            },
+            "azure/eu/o1-preview-2024-09-12": {
+              "rates": {
+                "input": "16.5",
+                "output": "66"
+              }
+            },
+            "azure/eu/o3-mini-2025-01-31": {
+              "rates": {
+                "input": "1.21",
+                "output": "4.84"
+              }
+            },
+            "azure/global-standard/gpt-4o-2024-08-06": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/global-standard/gpt-4o-2024-11-20": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/global-standard/gpt-4o-mini": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "azure/global/gpt-4o-2024-08-06": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/global/gpt-4o-2024-11-20": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/global/gpt-5.1": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/global/gpt-5.1-chat": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-3.5-turbo": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "azure/gpt-3.5-turbo-0125": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "azure/gpt-35-turbo": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "azure/gpt-35-turbo-0125": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "azure/gpt-35-turbo-1106": {
+              "rates": {
+                "input": "1",
+                "output": "2"
+              }
+            },
+            "azure/gpt-35-turbo-16k": {
+              "rates": {
+                "input": "3",
+                "output": "4"
+              }
+            },
+            "azure/gpt-35-turbo-16k-0613": {
+              "rates": {
+                "input": "3",
+                "output": "4"
+              }
+            },
+            "azure/gpt-4": {
+              "rates": {
+                "input": "30",
+                "output": "60"
+              }
+            },
+            "azure/gpt-4-0125-preview": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "azure/gpt-4-0613": {
+              "rates": {
+                "input": "30",
+                "output": "60"
+              }
+            },
+            "azure/gpt-4-1106-preview": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "azure/gpt-4-32k": {
+              "rates": {
+                "input": "60",
+                "output": "120"
+              }
+            },
+            "azure/gpt-4-32k-0613": {
+              "rates": {
+                "input": "60",
+                "output": "120"
+              }
+            },
+            "azure/gpt-4-turbo": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "azure/gpt-4-turbo-2024-04-09": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "azure/gpt-4-turbo-vision-preview": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "azure/gpt-4.1": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "azure/gpt-4.1-2025-04-14": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "azure/gpt-4.1-mini": {
+              "rates": {
+                "input": "0.4",
+                "output": "1.6"
+              }
+            },
+            "azure/gpt-4.1-mini-2025-04-14": {
+              "rates": {
+                "input": "0.4",
+                "output": "1.6"
+              }
+            },
+            "azure/gpt-4.1-nano": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "azure/gpt-4.1-nano-2025-04-14": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "azure/gpt-4.5-preview": {
+              "rates": {
+                "input": "75",
+                "output": "150"
+              }
+            },
+            "azure/gpt-4o": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/gpt-4o-2024-05-13": {
+              "rates": {
+                "input": "5",
+                "output": "15"
+              }
+            },
+            "azure/gpt-4o-2024-08-06": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/gpt-4o-2024-11-20": {
+              "rates": {
+                "input": "2.75",
+                "output": "11"
+              }
+            },
+            "azure/gpt-4o-audio-preview-2024-12-17": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/gpt-4o-mini": {
+              "rates": {
+                "input": "0.165",
+                "output": "0.66"
+              }
+            },
+            "azure/gpt-4o-mini-2024-07-18": {
+              "rates": {
+                "input": "0.165",
+                "output": "0.66"
+              }
+            },
+            "azure/gpt-4o-mini-audio-preview-2024-12-17": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5-2025-08-07": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5-chat": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5-chat-latest": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5-mini": {
+              "rates": {
+                "input": "0.25",
+                "output": "2"
+              }
+            },
+            "azure/gpt-5-mini-2025-08-07": {
+              "rates": {
+                "input": "0.25",
+                "output": "2"
+              }
+            },
+            "azure/gpt-5-nano": {
+              "rates": {
+                "input": "0.05",
+                "output": "0.4"
+              }
+            },
+            "azure/gpt-5-nano-2025-08-07": {
+              "rates": {
+                "input": "0.05",
+                "output": "0.4"
+              }
+            },
+            "azure/gpt-5.1": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5.1-2025-11-13": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5.1-chat": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5.1-chat-2025-11-13": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "azure/gpt-5.2": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "azure/gpt-5.2-2025-12-11": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "azure/gpt-5.2-chat": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "azure/gpt-5.2-chat-2025-12-11": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "azure/gpt-5.3-chat": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "azure/gpt-5.4": {
+              "rates": {
+                "input": "2.5",
+                "output": "15"
+              }
+            },
+            "azure/gpt-5.4-2026-03-05": {
+              "rates": {
+                "input": "2.5",
+                "output": "15"
+              }
+            },
+            "azure/gpt-5.4-mini": {
+              "rates": {
+                "input": "0.75",
+                "output": "4.5"
+              }
+            },
+            "azure/gpt-5.4-mini-2026-03-17": {
+              "rates": {
+                "input": "0.75",
+                "output": "4.5"
+              }
+            },
+            "azure/gpt-5.4-nano": {
+              "rates": {
+                "input": "0.2",
+                "output": "1.25"
+              }
+            },
+            "azure/gpt-5.4-nano-2026-03-17": {
+              "rates": {
+                "input": "0.2",
+                "output": "1.25"
+              }
+            },
+            "azure/gpt-5.5": {
+              "rates": {
+                "input": "5",
+                "output": "30"
+              }
+            },
+            "azure/gpt-5.5-2026-04-23": {
+              "rates": {
+                "input": "5",
+                "output": "30"
+              }
+            },
+            "azure/gpt-5.6": {
+              "rates": {
+                "input": "5",
+                "output": "30"
+              }
+            },
+            "azure/gpt-5.6-luna": {
+              "rates": {
+                "input": "0.2",
+                "output": "1.2"
+              }
+            },
+            "azure/gpt-5.6-sol": {
+              "rates": {
+                "input": "5",
+                "output": "30"
+              }
+            },
+            "azure/gpt-5.6-terra": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "azure/gpt-audio-1.5-2026-02-23": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/gpt-audio-2025-08-28": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "azure/gpt-audio-mini": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.4"
+              }
+            },
+            "azure/gpt-audio-mini-2025-10-06": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.4"
+              }
+            },
+            "azure/mistral-large-2402": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "azure/mistral-large-latest": {
+              "rates": {
+                "input": "8",
+                "output": "24"
+              }
+            },
+            "azure/o1": {
+              "rates": {
+                "input": "15",
+                "output": "60"
+              }
+            },
+            "azure/o1-2024-12-17": {
+              "rates": {
+                "input": "15",
+                "output": "60"
+              }
+            },
+            "azure/o1-mini": {
+              "rates": {
+                "input": "1.21",
+                "output": "4.84"
+              }
+            },
+            "azure/o1-mini-2024-09-12": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "azure/o1-preview": {
+              "rates": {
+                "input": "15",
+                "output": "60"
+              }
+            },
+            "azure/o1-preview-2024-09-12": {
+              "rates": {
+                "input": "15",
+                "output": "60"
+              }
+            },
+            "azure/o3": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "azure/o3-2025-04-16": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "azure/o3-mini": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "azure/o3-mini-2025-01-31": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "azure/o4-mini": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "azure/o4-mini-2025-04-16": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "azure/us-gov/gpt-5.1": {
+              "rates": {
+                "input": "1.71875",
+                "output": "13.75"
+              }
+            },
+            "azure/us-gov/o3-mini": {
+              "rates": {
+                "input": "1.513",
+                "output": "6.05"
+              }
+            },
+            "azure/us/gpt-4.1-2025-04-14": {
+              "rates": {
+                "input": "2.2",
+                "output": "8.8"
+              }
+            },
+            "azure/us/gpt-4.1-mini-2025-04-14": {
+              "rates": {
+                "input": "0.44",
+                "output": "1.76"
+              }
+            },
+            "azure/us/gpt-4.1-nano-2025-04-14": {
+              "rates": {
+                "input": "0.11",
+                "output": "0.44"
+              }
+            },
+            "azure/us/gpt-4o-2024-08-06": {
+              "rates": {
+                "input": "2.75",
+                "output": "11"
+              }
+            },
+            "azure/us/gpt-4o-2024-11-20": {
+              "rates": {
+                "input": "2.75",
+                "output": "11"
+              }
+            },
+            "azure/us/gpt-4o-mini-2024-07-18": {
+              "rates": {
+                "input": "0.165",
+                "output": "0.66"
+              }
+            },
+            "azure/us/gpt-5-2025-08-07": {
+              "rates": {
+                "input": "1.375",
+                "output": "11"
+              }
+            },
+            "azure/us/gpt-5-mini-2025-08-07": {
+              "rates": {
+                "input": "0.275",
+                "output": "2.2"
+              }
+            },
+            "azure/us/gpt-5-nano-2025-08-07": {
+              "rates": {
+                "input": "0.055",
+                "output": "0.44"
+              }
+            },
+            "azure/us/gpt-5.1": {
+              "rates": {
+                "input": "1.38",
+                "output": "11"
+              }
+            },
+            "azure/us/gpt-5.1-chat": {
+              "rates": {
+                "input": "1.38",
+                "output": "11"
+              }
+            },
+            "azure/us/gpt-5.4": {
+              "rates": {
+                "input": "2.75",
+                "output": "16.5"
+              }
+            },
+            "azure/us/gpt-5.4-2026-03-05": {
+              "rates": {
+                "input": "2.75",
+                "output": "16.5"
+              }
+            },
+            "azure/us/gpt-5.5": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/us/gpt-5.5-2026-04-23": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/us/gpt-5.6": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/us/gpt-5.6-luna": {
+              "rates": {
+                "input": "0.22",
+                "output": "1.32"
+              }
+            },
+            "azure/us/gpt-5.6-sol": {
+              "rates": {
+                "input": "5.5",
+                "output": "33"
+              }
+            },
+            "azure/us/gpt-5.6-terra": {
+              "rates": {
+                "input": "2.2",
+                "output": "13.2"
+              }
+            },
+            "azure/us/o1-2024-12-17": {
+              "rates": {
+                "input": "16.5",
+                "output": "66"
+              }
+            },
+            "azure/us/o1-mini-2024-09-12": {
+              "rates": {
+                "input": "1.21",
+                "output": "4.84"
+              }
+            },
+            "azure/us/o1-preview-2024-09-12": {
+              "rates": {
+                "input": "16.5",
+                "output": "66"
+              }
+            },
+            "azure/us/o3-2025-04-16": {
+              "rates": {
+                "input": "2.2",
+                "output": "8.8"
+              }
+            },
+            "azure/us/o3-mini-2025-01-31": {
+              "rates": {
+                "input": "1.21",
+                "output": "4.84"
+              }
+            },
+            "azure/us/o4-mini-2025-04-16": {
+              "rates": {
+                "input": "1.21",
+                "output": "4.84"
+              }
+            },
+            "computer-use-preview": {
+              "rates": {
+                "input": "3",
+                "output": "12"
+              }
+            }
+          }
+        },
+        "gcp.gemini": {
+          "models": {
+            "gemini-2.5-flash-native-audio-latest": {
+              "rates": {
+                "input": "0.5",
+                "output": "2"
+              }
+            },
+            "gemini-2.5-flash-native-audio-preview-09-2025": {
+              "rates": {
+                "input": "0.5",
+                "output": "2"
+              }
+            },
+            "gemini-2.5-flash-native-audio-preview-12-2025": {
+              "rates": {
+                "input": "0.5",
+                "output": "2"
+              }
+            },
+            "gemini-3.1-flash-live-preview": {
+              "rates": {
+                "input": "0.75",
+                "output": "4.5"
+              }
+            },
+            "gemini-exp-1206": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "gemini-flash-latest": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "gemini-flash-lite-latest": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gemini-pro-latest": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gemini/gemini-2.0-flash": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gemini/gemini-2.0-flash-001": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gemini/gemini-2.0-flash-lite": {
+              "rates": {
+                "input": "0.075",
+                "output": "0.3"
+              }
+            },
+            "gemini/gemini-2.0-flash-lite-001": {
+              "rates": {
+                "input": "0.075",
+                "output": "0.3"
+              }
+            },
+            "gemini/gemini-2.5-computer-use-preview-10-2025": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gemini/gemini-2.5-flash": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "gemini/gemini-2.5-flash-lite": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gemini/gemini-2.5-flash-lite-preview-06-17": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gemini/gemini-2.5-flash-lite-preview-09-2025": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gemini/gemini-2.5-flash-native-audio-latest": {
+              "rates": {
+                "input": "0.5",
+                "output": "2"
+              }
+            },
+            "gemini/gemini-2.5-flash-native-audio-preview-09-2025": {
+              "rates": {
+                "input": "0.5",
+                "output": "2"
+              }
+            },
+            "gemini/gemini-2.5-flash-native-audio-preview-12-2025": {
+              "rates": {
+                "input": "0.5",
+                "output": "2"
+              }
+            },
+            "gemini/gemini-2.5-flash-preview-09-2025": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "gemini/gemini-2.5-pro": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gemini/gemini-2.5-pro-preview-tts": {
+              "rates": {
+                "input": "1",
+                "output": "20"
+              }
+            },
+            "gemini/gemini-3-flash-preview": {
+              "rates": {
+                "input": "0.5",
+                "output": "3"
+              }
+            },
+            "gemini/gemini-3-pro-preview": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "gemini/gemini-3.1-flash-lite": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.5"
+              }
+            },
+            "gemini/gemini-3.1-flash-lite-preview": {
+              "rates": {
+                "input": "0.25",
+                "output": "1.5"
+              }
+            },
+            "gemini/gemini-3.1-flash-live-preview": {
+              "rates": {
+                "input": "0.75",
+                "output": "4.5"
+              }
+            },
+            "gemini/gemini-3.1-pro-preview": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "gemini/gemini-3.1-pro-preview-customtools": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "gemini/gemini-3.5-flash": {
+              "rates": {
+                "input": "1.5",
+                "output": "9"
+              }
+            },
+            "gemini/gemini-3.5-flash-lite": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "gemini/gemini-3.5-live-translate-preview": {
+              "rates": {
+                "input": "3.5",
+                "output": "21"
+              }
+            },
+            "gemini/gemini-3.6-flash": {
+              "rates": {
+                "input": "0.75",
+                "output": "3.75"
+              }
+            },
+            "gemini/gemini-3.7-flash": {
+              "rates": {
+                "input": "0.75",
+                "output": "3.75"
+              }
+            },
+            "gemini/gemini-3.8-flash": {
+              "rates": {
+                "input": "0.75",
+                "output": "3.75"
+              }
+            },
+            "gemini/gemini-exp-1114": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "gemini/gemini-exp-1206": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "gemini/gemini-flash-latest": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "gemini/gemini-flash-lite-latest": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gemini/gemini-gemma-2-27b-it": {
+              "rates": {
+                "input": "0.35",
+                "output": "1.05"
+              }
+            },
+            "gemini/gemini-gemma-2-9b-it": {
+              "rates": {
+                "input": "0.35",
+                "output": "1.05"
+              }
+            },
+            "gemini/gemini-omni-1.1-flash": {
+              "rates": {
+                "input": "1.5",
+                "output": "9"
+              }
+            },
+            "gemini/gemini-omni-flash-preview": {
+              "rates": {
+                "input": "1.5",
+                "output": "9"
+              }
+            },
+            "gemini/gemini-pro-latest": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gemini/gemini-robotics-er-1.5-preview": {
+              "rates": {
+                "input": "0.3",
+                "output": "2.5"
+              }
+            },
+            "gemini/gemini-robotics-er-1.6-preview": {
+              "rates": {
+                "input": "1",
+                "output": "5"
+              }
+            },
+            "gemini/gemini-robotics-er-2-preview": {
+              "rates": {
+                "input": "2",
+                "output": "10"
+              }
+            },
+            "gemini/gemini-robotics-er-2-streaming-preview": {
+              "rates": {
+                "input": "2",
+                "output": "10"
+              }
+            },
+            "gemini/gemma-3-27b-it": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "gemini/gemma-4-26b-a4b-it": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "gemini/gemma-4-31b-it": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "gemini/learnlm-1.5-pro-experimental": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "gemini/lyria-3-clip-preview": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            },
+            "gemini/lyria-3-pro-preview": {
+              "rates": {
+                "input": "0",
+                "output": "0"
+              }
+            }
+          }
+        },
+        "gcp.vertex_ai": {
+          "models": {
+            "vertex_ai/gemini-3-flash-preview": {
+              "rates": {
+                "input": "0.5",
+                "output": "3"
+              }
+            },
+            "vertex_ai/gemini-3-pro-preview": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "vertex_ai/gemini-3.1-pro-preview": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "vertex_ai/gemini-3.1-pro-preview-customtools": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "vertex_ai/gemini-3.5-flash": {
+              "rates": {
+                "input": "1.5",
+                "output": "9"
+              }
+            },
+            "vertex_ai/gemini-3.6-flash": {
+              "rates": {
+                "input": "0.75",
+                "output": "3.75"
+              }
+            },
+            "vertex_ai/gemini-3.7-flash": {
+              "rates": {
+                "input": "0.75",
+                "output": "3.75"
+              }
+            },
+            "vertex_ai/gemini-3.8-flash": {
+              "rates": {
+                "input": "0.75",
+                "output": "3.75"
+              }
+            },
+            "vertex_ai/xai/grok-4.1-fast-non-reasoning": {
+              "rates": {
+                "input": "0.2",
+                "output": "0.5"
+              }
+            },
+            "vertex_ai/xai/grok-4.1-fast-reasoning": {
+              "rates": {
+                "input": "0.2",
+                "output": "0.5"
+              }
+            },
+            "vertex_ai/xai/grok-4.20-non-reasoning": {
+              "rates": {
+                "input": "2",
+                "output": "6"
+              }
+            },
+            "vertex_ai/xai/grok-4.20-reasoning": {
+              "rates": {
+                "input": "2",
+                "output": "6"
+              }
+            }
+          }
+        },
+        "openai": {
+          "models": {
+            "chat-latest": {
+              "rates": {
+                "input": "5",
+                "output": "30"
+              }
+            },
+            "chatgpt-4o-latest": {
+              "rates": {
+                "input": "5",
+                "output": "15"
+              }
+            },
+            "daybreak-blue-latest": {
+              "rates": {
+                "input": "4",
+                "output": "20"
+              }
+            },
+            "daybreak-red-latest": {
+              "rates": {
+                "input": "12.5",
+                "output": "75"
+              }
+            },
+            "ft:gpt-3.5-turbo": {
+              "rates": {
+                "input": "3",
+                "output": "6"
+              }
+            },
+            "ft:gpt-3.5-turbo-0125": {
+              "rates": {
+                "input": "3",
+                "output": "6"
+              }
+            },
+            "ft:gpt-3.5-turbo-0613": {
+              "rates": {
+                "input": "3",
+                "output": "6"
+              }
+            },
+            "ft:gpt-3.5-turbo-1106": {
+              "rates": {
+                "input": "3",
+                "output": "6"
+              }
+            },
+            "ft:gpt-4-0613": {
+              "rates": {
+                "input": "30",
+                "output": "60"
+              }
+            },
+            "ft:gpt-4.1-2025-04-14": {
+              "rates": {
+                "input": "3",
+                "output": "12"
+              }
+            },
+            "ft:gpt-4.1-mini-2025-04-14": {
+              "rates": {
+                "input": "0.8",
+                "output": "3.2"
+              }
+            },
+            "ft:gpt-4.1-nano-2025-04-14": {
+              "rates": {
+                "input": "0.2",
+                "output": "0.8"
+              }
+            },
+            "ft:gpt-4o-2024-08-06": {
+              "rates": {
+                "input": "3.75",
+                "output": "15"
+              }
+            },
+            "ft:gpt-4o-2024-11-20": {
+              "rates": {
+                "input": "3.75",
+                "output": "15"
+              }
+            },
+            "ft:gpt-4o-mini-2024-07-18": {
+              "rates": {
+                "input": "0.3",
+                "output": "1.2"
+              }
+            },
+            "ft:o4-mini-2025-04-16": {
+              "rates": {
+                "input": "4",
+                "output": "16"
+              }
+            },
+            "gpt-3.5-turbo": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "gpt-3.5-turbo-0125": {
+              "rates": {
+                "input": "0.5",
+                "output": "1.5"
+              }
+            },
+            "gpt-3.5-turbo-1106": {
+              "rates": {
+                "input": "1",
+                "output": "2"
+              }
+            },
+            "gpt-3.5-turbo-16k": {
+              "rates": {
+                "input": "3",
+                "output": "4"
+              }
+            },
+            "gpt-4": {
+              "rates": {
+                "input": "30",
+                "output": "60"
+              }
+            },
+            "gpt-4-0125-preview": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "gpt-4-0314": {
+              "rates": {
+                "input": "30",
+                "output": "60"
+              }
+            },
+            "gpt-4-0613": {
+              "rates": {
+                "input": "30",
+                "output": "60"
+              }
+            },
+            "gpt-4-1106-preview": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "gpt-4-turbo": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "gpt-4-turbo-2024-04-09": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "gpt-4-turbo-preview": {
+              "rates": {
+                "input": "10",
+                "output": "30"
+              }
+            },
+            "gpt-4.1": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "gpt-4.1-2025-04-14": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "gpt-4.1-mini": {
+              "rates": {
+                "input": "0.4",
+                "output": "1.6"
+              }
+            },
+            "gpt-4.1-mini-2025-04-14": {
+              "rates": {
+                "input": "0.4",
+                "output": "1.6"
+              }
+            },
+            "gpt-4.1-nano": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gpt-4.1-nano-2025-04-14": {
+              "rates": {
+                "input": "0.1",
+                "output": "0.4"
+              }
+            },
+            "gpt-4o": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-4o-2024-05-13": {
+              "rates": {
+                "input": "5",
+                "output": "15"
+              }
+            },
+            "gpt-4o-2024-08-06": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-4o-2024-11-20": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-4o-audio-preview": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-4o-audio-preview-2024-12-17": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-4o-audio-preview-2025-06-03": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-4o-mini": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "gpt-4o-mini-2024-07-18": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "gpt-4o-mini-audio-preview": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "gpt-4o-mini-audio-preview-2024-12-17": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "gpt-4o-mini-search-preview": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "gpt-4o-mini-search-preview-2025-03-11": {
+              "rates": {
+                "input": "0.15",
+                "output": "0.6"
+              }
+            },
+            "gpt-4o-search-preview": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-4o-search-preview-2025-03-11": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-5": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5-2025-08-07": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5-chat": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5-chat-latest": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5-mini": {
+              "rates": {
+                "input": "0.25",
+                "output": "2"
+              }
+            },
+            "gpt-5-mini-2025-08-07": {
+              "rates": {
+                "input": "0.25",
+                "output": "2"
+              }
+            },
+            "gpt-5-nano": {
+              "rates": {
+                "input": "0.05",
+                "output": "0.4"
+              }
+            },
+            "gpt-5-nano-2025-08-07": {
+              "rates": {
+                "input": "0.05",
+                "output": "0.4"
+              }
+            },
+            "gpt-5-search-api": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5-search-api-2025-10-14": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5.1": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5.1-2025-11-13": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5.1-chat-latest": {
+              "rates": {
+                "input": "1.25",
+                "output": "10"
+              }
+            },
+            "gpt-5.2": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "gpt-5.2-2025-12-11": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "gpt-5.2-chat-latest": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "gpt-5.3-chat-latest": {
+              "rates": {
+                "input": "1.75",
+                "output": "14"
+              }
+            },
+            "gpt-5.4": {
+              "rates": {
+                "input": "2.5",
+                "output": "15"
+              }
+            },
+            "gpt-5.4-2026-03-05": {
+              "rates": {
+                "input": "2.5",
+                "output": "15"
+              }
+            },
+            "gpt-5.4-mini": {
+              "rates": {
+                "input": "0.75",
+                "output": "4.5"
+              }
+            },
+            "gpt-5.4-mini-2026-03-17": {
+              "rates": {
+                "input": "0.75",
+                "output": "4.5"
+              }
+            },
+            "gpt-5.4-nano": {
+              "rates": {
+                "input": "0.2",
+                "output": "1.25"
+              }
+            },
+            "gpt-5.4-nano-2026-03-17": {
+              "rates": {
+                "input": "0.2",
+                "output": "1.25"
+              }
+            },
+            "gpt-5.5": {
+              "rates": {
+                "input": "5",
+                "output": "30"
+              }
+            },
+            "gpt-5.5-2026-04-23": {
+              "rates": {
+                "input": "5",
+                "output": "30"
+              }
+            },
+            "gpt-5.6": {
+              "rates": {
+                "input": "4",
+                "output": "20"
+              }
+            },
+            "gpt-5.6-cyber": {
+              "rates": {
+                "input": "12.5",
+                "output": "75"
+              }
+            },
+            "gpt-5.6-luna": {
+              "rates": {
+                "input": "0.2",
+                "output": "1.2"
+              }
+            },
+            "gpt-5.6-sol": {
+              "rates": {
+                "input": "4",
+                "output": "20"
+              }
+            },
+            "gpt-5.6-terra": {
+              "rates": {
+                "input": "2",
+                "output": "12"
+              }
+            },
+            "gpt-6-astra": {
+              "rates": {
+                "input": "10",
+                "output": "50"
+              }
+            },
+            "gpt-audio": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-audio-1.5": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-audio-2025-08-28": {
+              "rates": {
+                "input": "2.5",
+                "output": "10"
+              }
+            },
+            "gpt-audio-mini": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.4"
+              }
+            },
+            "gpt-audio-mini-2025-10-06": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.4"
+              }
+            },
+            "gpt-audio-mini-2025-12-15": {
+              "rates": {
+                "input": "0.6",
+                "output": "2.4"
+              }
+            },
+            "o1": {
+              "rates": {
+                "input": "15",
+                "output": "60"
+              }
+            },
+            "o1-2024-12-17": {
+              "rates": {
+                "input": "15",
+                "output": "60"
+              }
+            },
+            "o3": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "o3-2025-04-16": {
+              "rates": {
+                "input": "2",
+                "output": "8"
+              }
+            },
+            "o3-mini": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "o3-mini-2025-01-31": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "o4-mini": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            },
+            "o4-mini-2025-04-16": {
+              "rates": {
+                "input": "1.1",
+                "output": "4.4"
+              }
+            }
+          }
+        }
+      }
+    }

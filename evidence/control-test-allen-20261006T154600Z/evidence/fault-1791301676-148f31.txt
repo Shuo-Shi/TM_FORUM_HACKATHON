@@ -1,0 +1,31 @@
+run id     : fault-1791301676-148f31
+output dir : /home/ec2-user/evidence
+region     : us-east-1
+
+1/6 tmf639.json — TMF639 Resource Inventory
+    15129 bytes
+2/6 cr-status.json — ModelConfig/ToolConfig/AgentConfig status+conditions
+    20 resources
+3/6 approvals.json — approval attestation annotations
+    20 CRs, 19 with an approver recorded
+4/6 gateway-log.json — gateway request/response records for fault-1791301676-148f31
+    22 matching line(s)
+5/6 registry.json — registry records (registryRecordId, approval status)
+    19 registered asset(s)
+6/6 otel-traces.json — audit ledger timeline for fault-1791301676-148f31 (see note in the file if traces are unavailable)
+    8 record(s)
+
+wrote 6 files to /home/ec2-user/evidence:
+-rw-rw-r--. 1 ec2-user ec2-user      0 Oct  4 19:08 /home/ec2-user/evidence/actual-events.json
+-rw-rw-r--. 1 ec2-user ec2-user    226 Oct  5 00:39 /home/ec2-user/evidence/approvals-nemotron-nano-9b.json
+-rw-rw-r--. 1 ec2-user ec2-user   3979 Oct  6 15:48 /home/ec2-user/evidence/approvals.json
+-rw-rw-r--. 1 ec2-user ec2-user    337 Oct  5 20:06 /home/ec2-user/evidence/baseline-2026-10-05.json
+-rw-rw-r--. 1 ec2-user ec2-user  10829 Oct  5 00:38 /home/ec2-user/evidence/cr-status-nemotron-nano-9b.json
+-rw-rw-r--. 1 ec2-user ec2-user 289624 Oct  6 15:48 /home/ec2-user/evidence/cr-status.json
+-rw-rw-r--. 1 ec2-user ec2-user   1059 Oct  5 18:34 /home/ec2-user/evidence/drift-pair.json
+-rw-rw-r--. 1 ec2-user ec2-user    464 Oct  5 15:17 /home/ec2-user/evidence/expected-events.json
+-rw-rw-r--. 1 ec2-user ec2-user  41441 Oct  6 15:48 /home/ec2-user/evidence/gateway-log.json
+-rw-rw-r--. 1 ec2-user ec2-user   4218 Oct  6 15:48 /home/ec2-user/evidence/otel-traces.json
+-rw-rw-r--. 1 ec2-user ec2-user   4385 Oct  6 15:48 /home/ec2-user/evidence/registry.json
+-rw-rw-r--. 1 ec2-user ec2-user  15129 Oct  6 15:48 /home/ec2-user/evidence/tmf639.json
+-rw-rw-r--. 1 ec2-user ec2-user    470 Oct  5 18:34 /home/ec2-user/evidence/twin-vs-agent.json

@@ -1,0 +1,10 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+#
+# Pinned the same way build-agent-image.sh's own EXTRA_PIP is pinned: exact
+# versions, so a rebuild does not silently pick up a newer SDK. Match these
+# to Module 9 (Build Your Own Agent) if that module's pins move.
+strands-agents[openai]==1.57.2
+bedrock-agentcore==1.24.0
+aws-opentelemetry-distro==0.21.0
+mcp==1.30.0

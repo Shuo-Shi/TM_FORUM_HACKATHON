@@ -1,0 +1,56 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  name: cluster-status
+  namespace: components
+  annotations:
+    # Platform-declared at install: approve in the same apply so the CR never
+    # enters Reviewing. Annotating after apply raced the creation reconcile
+    # (E4 2026-10-03: 2/8 tools parked, Provisioned never surfaced).
+    modaas.tmforum.org/approver: system-admin
+    modaas.tmforum.org/approval-attestation: Approved by the workshop platform at install
+spec:
+  toolName: cluster-status
+  provider: agentCoreGateway
+  toolType: mcp
+  description: "Read-only list of ModelConfig/ToolConfig/AgentConfig with phase and conditions"
+  agentCoreGateway:
+    gatewayIdentifier: "${MODAAS_GATEWAY_ID}"
+    # The Gateway invokes the Lambda with its own service role (GATEWAY_IAM_ROLE);
+    # the Lambda ARN is the target. Both substituted by bootstrap step 14.
+    credentialProviderType: GATEWAY_IAM_ROLE
+    mcpServer:
+      endpoint: "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:team-${TEAM}-cluster-status"
+    tools:
+    - name: list_resources
+      description: >-
+        List ModelConfig, ToolConfig, and AgentConfig resources in the
+        components namespace with their phase and conditions.
+      inputSchema:
+        type: object
+        properties:
+          kind:
+            type: string
+            description: "Filter by kind: modelconfig, toolconfig, or agentconfig. Omit for all."
+        required: []
+  governance:
+    approval: {required: true, requiredApprovals: 1}
+    dataClassification: internal
+    owner: "workshop-facilitators"
+  access:
+    # Tool names seen by Cedar carry the Gateway target prefix (<alias>___<tool>):
+    # a bare name never matches and every tools/call is DENIED (event 486b9241).
+    cedarPolicy: |
+      permit(
+        principal,
+        action == Action::"invoke",
+        resource
+      ) unless {
+        context has toolName &&
+        !["cluster-status___list_resources"].contains(context.toolName)
+      } unless {
+        resource has dataClassification &&
+        resource.dataClassification == "restricted"
+      };

@@ -1,0 +1,25 @@
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  name: smf-create-session
+  namespace: components
+spec:
+  toolName: smf-create-session
+  toolType: mcp
+  provider: agentCoreGateway
+  description: "PDU session establishment via SMF N4/PFCP: smf_create_session()"
+  agentCoreGateway:
+    gatewayIdentifier: "${MODAAS_GATEWAY_ID}"   # your account's Gateway; the platform exports this variable to your shell
+    credentialProviderType: NONE   # replace with your SMF's real auth mode
+    mcpServer:
+      endpoint: https://your-smf-mcp-endpoint/mcp
+      transport: streamable-http
+  governance:
+    owner: network-team@example.com
+    costCenter: network-ops
+    dataClassification: internal
+    approval:
+      required: true
+      requiredApprovals: 1
+  safety:
+    required: true

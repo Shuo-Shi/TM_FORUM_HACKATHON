@@ -1,0 +1,80 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  name: cr-author
+  namespace: components
+  annotations:
+    # Platform-declared at install: approve in the same apply so the CR never
+    # enters Reviewing. Annotating after apply raced the creation reconcile
+    # (E4 2026-10-03: 2/8 tools parked, Provisioned never surfaced).
+    modaas.tmforum.org/approver: system-admin
+    modaas.tmforum.org/approval-attestation: Approved by the workshop platform at install
+spec:
+  toolName: cr-author
+  provider: agentCoreGateway
+  toolType: mcp
+  description: "Scaffold and patch ModelConfig/ToolConfig/AgentConfig CRs with validation"
+  agentCoreGateway:
+    gatewayIdentifier: "${MODAAS_GATEWAY_ID}"
+    # The Gateway invokes the Lambda with its own service role (GATEWAY_IAM_ROLE);
+    # the Lambda ARN is the target. Both substituted by bootstrap step 14.
+    credentialProviderType: GATEWAY_IAM_ROLE
+    mcpServer:
+      endpoint: "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:team-${TEAM}-cr-author"
+    tools:
+    - name: scaffold_cr
+      description: >-
+        Scaffold a new Kubernetes Custom Resource (ModelConfig, ToolConfig, or
+        AgentConfig) with required fields filled and defaults applied.
+        Returns the YAML, kubectl commands, and validation warnings.
+      inputSchema:
+        type: object
+        properties:
+          kind:
+            type: string
+            description: "CR kind: ModelConfig, ToolConfig, or AgentConfig"
+          name:
+            type: string
+            description: "metadata.name for the CR"
+          fields:
+            type: object
+            description: "Optional dict of dot-path -> value overrides (e.g. spec.modelId)"
+        required: ["kind", "name"]
+    - name: patch_cr
+      description: >-
+        Patch an existing CR. Validates immutable fields, returns updated YAML
+        plus the kubectl patch, wait, and approval commands.
+      inputSchema:
+        type: object
+        properties:
+          kind:
+            type: string
+            description: "CR kind: ModelConfig, ToolConfig, or AgentConfig"
+          current_yaml:
+            type: string
+            description: "The current CR YAML or JSON as a string"
+          changes:
+            type: object
+            description: "Dict of dot-path -> new value for fields to change"
+        required: ["kind", "current_yaml", "changes"]
+  governance:
+    approval: {required: true, requiredApprovals: 1}
+    dataClassification: internal
+    owner: "workshop-facilitators"
+  access:
+    # Tool names seen by Cedar carry the Gateway target prefix (<alias>___<tool>):
+    # a bare name never matches and every tools/call is DENIED (event 486b9241).
+    cedarPolicy: |
+      permit(
+        principal,
+        action == Action::"invoke",
+        resource
+      ) unless {
+        context has toolName &&
+        !["cr-author___scaffold_cr", "cr-author___patch_cr"].contains(context.toolName)
+      } unless {
+        resource has dataClassification &&
+        resource.dataClassification == "restricted"
+      };

@@ -1,0 +1,120 @@
+register_version: "1.0"
+
+controls:
+  - control_id: "16"
+    name: "Per-run token spend cap"
+
+    metric: "total_tokens_per_run"
+
+    threshold:
+      metric_name: "total_tokens_per_run"
+      comparison: "<="
+      limit: 40000
+      exception_tolerance: 0
+      version: "AIA-COST-001-v1"
+      effective_date: "2026-10-04"
+      rationale: >
+        Limit selected to prevent excessive
+        token consumption and cost escalation
+        during a single agent execution.
+
+    measurement:
+      basis: "gateway per-call log line"
+      aggregation: "sum(input_tokens + output_tokens)"
+      grouping_key: "modaas.run_id"
+
+    governance:
+      owner: "VelocityX"
+      threshold_owner: "VelocityX"
+
+    enforcement_points:
+      - name: "post-evaluation"
+        type: "asynchronous"
+
+      - name: "inline-gateway"
+        type: "synchronous"
+        status: "not implemented"
+
+    evidence_requirements:
+      - run_id
+      - control_id
+      - threshold_version
+      - measured_value
+      - verdict
+      - timestamp
+
+  - control_id: "7"
+    name: "Automatic event recording"
+
+    metric: "event_recording_coverage_and_gap_validation"
+
+    threshold:
+      coverage_limit: 100
+      gap_limit_ms: 2500
+      violating_gap_allowance_percent: 10
+      exception_tolerance: 0
+      version: "AIA-LOG-001-v2"
+      effective_date: "2026-10-05"
+
+      rationale: >
+        Every in-scope event must be recorded,
+        linked to a run, and event timing gaps
+        must remain below the declared limit.
+        No more than 10 percent of eligible gaps
+        may exceed the gap threshold.
+
+    measurement:
+      basis: "gateway-log records"
+
+      coverage_formula: >
+        valid_records / total_records * 100
+
+      gap_formula: >
+        violating_gaps / total_gaps * 100
+
+      grouping_key: "modaas.run_id"
+
+    governance:
+      owner: "VelocityX"
+
+    evidence_requirements:
+      - run_id
+      - trace.id
+      - modaas.action_id
+      - timestamp
+      - threshold_version
+      - coverage_percent
+      - violating_gap_percent
+      - verdict
+
+  - control_id: "9"
+    name: "Drift and performance"
+    metric: "average_request_duration_ms"
+
+    threshold:
+      baseline_value: 1500
+      drift_limit_percent: 10
+      violating_window_allowance_percent: 0
+
+      version: "AIA-ARC-006-v1"
+      effective_date: "2026-10-05"
+
+      rationale: >
+        Average request latency may not
+        drift by more than 10 percent from
+        the approved baseline.
+
+    measurement:
+      basis: "gateway-log duration field"
+      aggregation: "average duration in ms"
+      grouping_key: "modaas.run_id"
+
+    governance:
+      owner: "VelocityX"
+
+    evidence_requirements:
+      - run_id
+      - baseline_value
+      - current_value
+      - drift_percent
+      - verdict

@@ -1,0 +1,38 @@
+AUDIT TRAIL -- 12 records
+================================================================
+ 1. [2026-10-05T20:52:35Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791233553-bc1dec
+    trace_id=9bc904f81e70482ca356f3c73d545ed1 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T20:52:39Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791233553-bc1dec
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791233553-bc1dec trace_id=9bc904f81e70482ca356f3c73d545ed1 result_summary=- Impacted customers: Cascade Health (CUST-3310, e
+ 3. [2026-10-05T20:52:39Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791233553-bc1dec
+    trace_id=9bc904f81e70482ca356f3c73d545ed1 governed call via alias nemotron-super-120b: http_status=200
+ 4. [2026-10-05T20:52:39Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791233553-bc1dec
+    disposition=escalate, decision='- Impacted customers: Cascade Health (CUST-3310, enterprise tier) and Greenfield Agriculture (CUST-5890, standard tier) at SITE-PHX-04  \n- How they are impacted: Packe
+ 5. [2026-10-05T20:52:42Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791233553-bc1dec
+    trace_id=46004466d16544ee880f516154f8c338 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T20:52:45Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791233553-bc1dec
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791233553-bc1dec trace_id=46004466d16544ee880f516154f8c338 result_summary=- **Incident disposition**: The incident is marked as "Cle
+ 7. [2026-10-05T20:52:45Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791233553-bc1dec
+    trace_id=46004466d16544ee880f516154f8c338 governed call via alias nemotron-nano-9b: http_status=200
+ 8. [2026-10-05T20:52:45Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791233553-bc1dec
+    disposition=escalate, decision='- **Incident disposition**: The incident is marked as "Clear fix available, but the change is out of policy" due to operational constraints.  \n- **Action per runbook**
+ 9. [2026-10-05T20:52:47Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791233553-bc1dec
+    trace_id=1f822437135e4ee1ab3fe0044618934a network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T20:52:52Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791233553-bc1dec
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791233553-bc1dec trace_id=1f822437135e4ee1ab3fe0044618934a result_summary=- Probable root cause: Failing optic on RTR-PHX-04-CORE
+11. [2026-10-05T20:52:52Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791233553-bc1dec
+    trace_id=1f822437135e4ee1ab3fe0044618934a governed call via alias nemotron-super-120b: http_status=200
+12. [2026-10-05T20:52:52Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791233553-bc1dec
+    disposition=escalate, decision='- Probable root cause: Failing optic on RTR-PHX-04-CORE eth-2/3 causing severe packet loss (6.8%) and degraded RSRP (-105 dBm).  \n- Proposed resolution: Switch traffic

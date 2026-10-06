@@ -1,0 +1,10 @@
+# MoDaaS PDP — dependencies
+# Pinned to align with operator + ai-gateway-pod ranges.
+fastapi>=0.115.0
+uvicorn>=0.30.0
+pydantic>=2.0
+kubernetes>=27.2.0,<31.0.0
+# Cedar Python bindings (a design note reference engine).
+# 4.x is the current stable line as of 2026-05-31; tested via cedarpy==4.8.4
+# during the pre-implementation spike.
+cedarpy>=4.0,<5.0

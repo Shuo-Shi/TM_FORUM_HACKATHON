@@ -1,0 +1,38 @@
+AUDIT TRAIL -- 12 records
+================================================================
+ 1. [2026-10-05T20:37:06Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791232624-d3b953
+    trace_id=fad5fce2fd0e459a9117a83f9844732b customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T20:37:11Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791232624-d3b953
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791232624-d3b953 trace_id=fad5fce2fd0e459a9117a83f9844732b result_summary=- Impacted customers: Meridian Logistics (CUST-100
+ 3. [2026-10-05T20:37:11Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791232624-d3b953
+    trace_id=fad5fce2fd0e459a9117a83f9844732b governed call via alias nemotron-super-120b: http_status=200
+ 4. [2026-10-05T20:37:11Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791232624-d3b953
+    disposition=undetermined, decision='- Impacted customers: Meridian Logistics (CUST-1001), Aurora Health Group (CUST-1002), Northwind Retail (CUST-2087), Summit Energy (CUST-4455), Pacific Transit Auth
+ 5. [2026-10-05T20:37:13Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791232624-d3b953
+    trace_id=dee3a7ed55214520a3c4e58669661b50 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T20:37:27Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791232624-d3b953
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791232624-d3b953 trace_id=dee3a7ed55214520a3c4e58669661b50 result_summary=- **Incident disposition**: Undetermined (no runbook found
+ 7. [2026-10-05T20:37:27Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791232624-d3b953
+    trace_id=dee3a7ed55214520a3c4e58669661b50 governed call via alias nemotron-nano-9b: http_status=200
+ 8. [2026-10-05T20:37:27Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791232624-d3b953
+    disposition=escalate, decision='- **Incident disposition**: Undetermined (no runbook found for INC-b953; escalate to network team for root cause analysis).  \n- **Action**: Use `network-twin___predict
+ 9. [2026-10-05T20:37:29Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791232624-d3b953
+    trace_id=0882e507de1a40b7af6440e58ddb53a3 network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T20:37:49Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791232624-d3b953
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791232624-d3b953 trace_id=0882e507de1a40b7af6440e58ddb53a3 result_summary=- Probable root cause: CRC errors on upstream port eth-
+11. [2026-10-05T20:37:49Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791232624-d3b953
+    trace_id=0882e507de1a40b7af6440e58ddb53a3 governed call via alias nemotron-super-120b: http_status=200
+12. [2026-10-05T20:37:49Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791232624-d3b953
+    disposition=auto-resolve, decision='- Probable root cause: CRC errors on upstream port eth-1/7 of DU-DEN-12-A causing fronthaul packet loss (4.2%) and latency (31ms p95), degrading RSRP by ~6 dB.\n- P

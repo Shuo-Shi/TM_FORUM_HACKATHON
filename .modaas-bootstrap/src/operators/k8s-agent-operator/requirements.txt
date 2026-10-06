@@ -1,0 +1,26 @@
+# k8s-agent-operator — provider=kubernetesPod only (a design note operator scope).
+#
+# NO boto3, and no opentelemetry-instrumentation-botocore. This operator makes no
+# AWS call: pod hosting is entirely K8s API work, and Registry projection goes
+# through operators/shared/backings. Four pins fewer than aws-agent-operator, and
+# four fewer supply-chain surfaces. If Registry projection with
+# MODAAS_REGISTRY_MODE=real turns out to need boto3 in-process, this comment is
+# the record of why it was absent (K8S-OPERATOR.md open question 2).
+
+kopf==1.37.2                    # exact pin, matching all three sibling operators
+# v31+ regressed projected-SA-token handling in-cluster: API calls 401 (measured
+# 2026-05-21, tests/evidence/2026-05-21-eaco-live/README.md:93). The siblings pin
+# ==27.2.0; the documented contract is the range, so the range is what is used.
+kubernetes>=27.2.0,<31.0.0
+python-json-logger==2.0.7       # exact pin, matching the sibling operators
+# PyYAML is a transitive dependency of kopf and kubernetes and is imported
+# directly by neither this operator nor operators/shared on the pod path; it is
+# left to those pins rather than declared unbounded here (project.md: every
+# dependency carries a bound with its rationale, so an unbounded declaration is
+# the thing to avoid).
+
+# OTel: exact-floor pins matching the siblings, for ADOT collector ABI
+# compatibility. The API/SDK pair must move together.
+opentelemetry-api>=1.27.0
+opentelemetry-sdk>=1.27.0
+opentelemetry-exporter-otlp-proto-grpc>=1.27.0

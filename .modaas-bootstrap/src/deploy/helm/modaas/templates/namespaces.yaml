@@ -1,0 +1,23 @@
+{{- if .Values.namespaces.create }}
+{{- /*
+  Only the SECONDARY namespace is templated here. The release target namespace
+  (.Values.global.namespace) is intentionally NOT templated: Helm must be able to write the
+  release record into it before manifests are applied, so it has to be created by
+  `--create-namespace` (or out of band). Templating it as well produces
+      original object Namespace with the name "modaas-system" not found
+
+  These were previously pre-install hooks. That is unsafe for a Namespace: Helm's DEFAULT
+  hook-delete-policy is before-hook-creation, so every install/upgrade DELETED the namespace
+  and every workload inside it, and an install retry raced its own deletion:
+      serviceaccounts "aws-agent-operator" is forbidden: unable to create new content in
+      namespace modaas-system because it is being terminated
+  There is no "never delete" hook policy, so a Namespace must not be a hook at all.
+*/}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.global.canvasNamespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    istio-injection: enabled
+{{- end }}

@@ -1,0 +1,25 @@
+{
+  "control_id": "16",
+  "control_name": "Per-run token spend cap",
+  "run_id": "fault-1791229953-b17d30",
+  "window_utc": null,
+  "verdict": "PASS",
+  "measured_value": "33669 tokens across 8 model calls",
+  "threshold_limit": 39000,
+  "threshold_version": "G-16-v1",
+  "effective_date": "2026-10-05",
+  "owner": "Afif Mazhar",
+  "evidence_ids": [
+    "a25e002e-9a4d-456e-aa88-b4bfe1e37295",
+    "59bf2206-d726-4eba-ba49-1e56c6f8ce42",
+    "08df2ba4-ddfb-479e-94bf-e6aae6e93b17",
+    "0854de02-01b0-4bfa-a4ed-d506ae5e67e3",
+    "38145042-c816-4570-a326-8c2a963ec62b",
+    "b8b45556-6d6d-401e-8df9-6ea89c53fcf4",
+    "79c04bcc-6756-4c50-a48c-79e0e4c6c878",
+    "f126f80b-df29-4154-b3b3-7ac2d571c80e"
+  ],
+  "note": "",
+  "evaluated_at": "2026-10-06T15:45:58.562090+00:00",
+  "sha256": "f4283860f11395a3e8c10a87e1725bfaa040d3d3b173231e5219ebb72e18c33e"
+}

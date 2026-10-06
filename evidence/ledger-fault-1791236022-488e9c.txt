@@ -1,0 +1,54 @@
+AUDIT TRAIL -- 17 records
+================================================================
+ 1. [2026-10-05T21:33:44Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791236022-488e9c
+    trace_id=d0c820e4bf784c9bb6deec12a4240403 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T21:36:44Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791236022-488e9c
+    trace_id=f012290e0e0c4ecda19f9a4b49c5877c customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 3. [2026-10-05T21:36:48Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791236022-488e9c
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791236022-488e9c trace_id=f012290e0e0c4ecda19f9a4b49c5877c result_summary=Based on the customer records lookup, there are no
+ 4. [2026-10-05T21:36:48Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791236022-488e9c
+    trace_id=f012290e0e0c4ecda19f9a4b49c5877c governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 5. [2026-10-05T21:36:48Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791236022-488e9c
+    disposition=gather-evidence, decision="Based on the customer records lookup, there are no customers found at site DU-DEN-12-A. However, the context provided indicates that CUST-1001 (Meridian Logistic
+ 6. [2026-10-05T21:36:51Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236022-488e9c
+    trace_id=1d9bfd937efc496ebb84daf94e00dc85 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 7. [2026-10-05T21:37:05Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236022-488e9c
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236022-488e9c trace_id=1d9bfd937efc496ebb84daf94e00dc85 result_summary=- **Incident disposition**: Gather evidence (no customers 
+ 8. [2026-10-05T21:37:05Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236022-488e9c
+    trace_id=1d9bfd937efc496ebb84daf94e00dc85 governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 9. [2026-10-05T21:37:05Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236022-488e9c
+    disposition=gather-evidence, decision='- **Incident disposition**: Gather evidence (no customers found at DU-DEN-12-A despite context indicating CUST-1001 is affected).  \n- **Action per runbook**: Us
+10. [2026-10-05T21:37:08Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791236022-488e9c
+    trace_id=9f6781fc3d714b6295594cef5f9a3797 network analysis via governed model 'nemotron-super-120b'; tool network-twin
+11. [2026-10-05T21:37:17Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791236022-488e9c
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791236022-488e9c trace_id=9f6781fc3d714b6295594cef5f9a3797 result_summary=Based on the network-twin prediction and telemetry anal
+12. [2026-10-05T21:37:17Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791236022-488e9c
+    trace_id=9f6781fc3d714b6295594cef5f9a3797 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+13. [2026-10-05T21:37:17Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791236022-488e9c
+    disposition=auto-resolve, decision='Based on the network-twin prediction and telemetry analysis:\n\n- **Probable root cause**: CRC errors on upstream port eth-1/7 at DU-DEN-12-A, with protection path 
+14. [2026-10-05T21:37:20Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791236022-488e9c
+    trace_id=27beb881968b4666a257d62f0dd5b51b it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+15. [2026-10-05T21:37:22Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791236022-488e9c
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791236022-488e9c trace_id=27beb881968b4666a257d62f0dd5b51b result_summary=- **Incident disposition**: Auto-resolve (per proposal)  
+
+16. [2026-10-05T21:37:22Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791236022-488e9c
+    trace_id=27beb881968b4666a257d62f0dd5b51b governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+17. [2026-10-05T21:37:22Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791236022-488e9c
+    disposition=auto-resolve, decision='- **Incident disposition**: Auto-resolve (per proposal)  \n- **Action per runbook**: Switch traffic from eth-1/7 to eth-1/8 protection path (reversible failover)  \

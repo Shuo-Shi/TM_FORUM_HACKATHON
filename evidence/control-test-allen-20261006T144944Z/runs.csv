@@ -1,0 +1,3 @@
+campaign_run,scenario,iteration,run_id,trace_id,runner_exit,model_calls,status,runner_log,evidence_file
+1,S1-fronthaul-degradation,1,fault-1791298184-87c476,19ffccd3b8ed41078338e0102959e9af,0,6,COLLECTED,/home/ec2-user/evidence/control-test-allen-20261006T144944Z/runner/001_S1-fronthaul-degradation_01_20261006T144944Z.log,/home/ec2-user/evidence/control-test-allen-20261006T144944Z/evidence/fault-1791298184-87c476.txt
+2,S2-transport-congestion,1,fault-1791298248-22e525,73dd1f4f5ed349a1990e54521100aa10,0,89,COLLECTED,/home/ec2-user/evidence/control-test-allen-20261006T144944Z/runner/002_S2-transport-congestion_01_20261006T145048Z.log,/home/ec2-user/evidence/control-test-allen-20261006T144944Z/evidence/fault-1791298248-22e525.txt

@@ -1,0 +1,41 @@
+AUDIT TRAIL -- 13 records
+================================================================
+ 1. [2026-10-05T22:15:40Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791238537-dd6220
+    trace_id=908b17e41752433fa3c70695640acf12 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T22:15:46Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791238537-dd6220
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791238537-dd6220 trace_id=908b17e41752433fa3c70695640acf12 result_summary=Based on the provided context, I can see the impac
+ 3. [2026-10-05T22:15:46Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791238537-dd6220
+    trace_id=908b17e41752433fa3c70695640acf12 governed call via alias nemotron-super-120b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 4. [2026-10-05T22:15:46Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791238537-dd6220
+    disposition=auto-resolve, decision='Based on the provided context, I can see the impacted customers and symptoms directly. Here\'s the summary:\n\n- **Impacted customers**: CUST-1001 (Meridian Logisti
+ 5. [2026-10-05T22:15:48Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791238537-dd6220
+    trace_id=e2cb4559e09e4b339fa745e5da373f6b it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T22:16:08Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791238537-dd6220
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791238537-dd6220 trace_id=e2cb4559e09e4b339fa745e5da373f6b result_summary=- **Incident disposition**: Auto-resolve (evidence confirm
+ 7. [2026-10-05T22:16:08Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791238537-dd6220
+    trace_id=e2cb4559e09e4b339fa745e5da373f6b governed call via alias nemotron-nano-9b: http_status=200 | guardrail=gateway-attached verdict=passed
+ 8. [2026-10-05T22:16:08Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791238537-dd6220
+    disposition=auto-resolve, decision='- **Incident disposition**: Auto-resolve (evidence confirms impact and resolution steps)  \n- **Action per runbook**: No specific runbook action required (decision 
+ 9. [2026-10-05T22:16:17Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791238537-dd6220
+    trace_id=fa2f3abeb7384180b9f455acb0b92b6e network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T22:19:11Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791238537-dd6220
+    trace_id=dfa3a06a32e84973b0fa0087c9982553 network analysis via governed model 'nemotron-super-120b'; tool network-twin
+11. [2026-10-05T22:19:27Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791238537-dd6220
+    trace_id=dfa3a06a32e84973b0fa0087c9982553 refused at gateway: http_status=500 model=nemotron-super-120b body='Model stopped generating due to maximum token limit. The partial message has been added to
+12. [2026-10-05T22:19:27Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791238537-dd6220
+    disposition=refused, no model output
+13. [2026-10-05T22:19:29Z] NEGOTIATION | actor=it-resolution-agent | step=5.5
+    correlation_id=fault-1791238537-dd6220
+    network->it proposal (397 chars): 'export CID=fault-1791238537-dd6220\n\nnetwork-resolution-agent  ·  refused\n------------------------------------------------------------------------\nrefused at gate

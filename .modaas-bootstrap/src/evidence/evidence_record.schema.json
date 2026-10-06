@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tmforum:oda:modaas:evidence-record:v1",
+  "title": "MoDaaS evidence record",
+  "description": "One record in the MoDaaS attested evidence chain (a design note). The language-neutral half of the contract: evidence/evidence_record.py is the Python half, and evidence/tests/test_evidence_schema.py fails if the two disagree on any record. Versioned like a CRD contract -- a change that would reject a record v1 accepted is a new $id, not an edit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "phase", "ts", "correlation_id", "actor", "attested_by"],
+  "properties": {
+    "schema_version": {
+      "const": "modaas.evidence/v1",
+      "description": "Pinned. A reader that accepted an unknown version would be guessing at field meanings."
+    },
+    "phase": {
+      "enum": ["intent", "invocation", "decision", "result-inspection", "approval"],
+      "description": "Which half of who/what/authorized/result this record carries. Only `decision` is platform-written (a design note point 4)."
+    },
+    "ts": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$",
+      "description": "RFC3339 instant. A timezone is REQUIRED: readers sort by `ts` (a design note point 9) and a naive stamp cannot be ordered against another zone's."
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The run's business correlation id (e.g. `fault-4471`), carried in W3C `baggage`. Required on every phase because it is the key an approver already searches by."
+    },
+    "trace_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "not": { "const": "00000000000000000000000000000000" },
+      "description": "The W3C traceparent trace id -- the canonical run key (a design note point 1). OPTIONAL because it is never fabricated: a caller that sent no traceparent produces a record without one. The all-zero value is invalid per W3C, so a record carrying it claims a join that cannot exist."
+    },
+    "action_id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "The per-call action id minted by modaas-authz at the first governed touch, or echoed from the caller's `baggage`. Canonical dashed form only."
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who the record says performed the step. SELF-ASSERTED on agent-written phases; see `principal` for the attested identity."
+    },
+    "attested_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who wrote this record. `modaas-authz` on a decision (and only there), `agent` for self-reported phases, `approver` for a human attestation. Not a closed set: a community sink or a future attestor is a legitimate writer."
+    },
+    "principal": {
+      "type": "string",
+      "description": "The identity the platform established for the caller, e.g. ServiceIdentity::\"eaco-policy\". Distinct from `actor`: this one was not chosen by the caller."
+    },
+    "asset": { "$ref": "#/$defs/asset" },
+    "registry_record_id": {
+      "type": "string",
+      "description": "The governed asset's Registry record id (a design note/a design note point 7), so a decision joins to the approval that admitted the asset."
+    },
+    "policy_id": {
+      "type": "string",
+      "description": "The Cedar policy id the decision was evaluated against."
+    },
+    "policy_version": {
+      "type": "string",
+      "description": "The policy generation that produced the verdict. Platform-only."
+    },
+    "decision": {
+      "enum": ["ALLOW", "DENY"],
+      "description": "The verdict. Platform-only: the one fact an auditor must not take from the party being audited."
+    },
+    "matched_policy": {
+      "type": ["string", "null"],
+      "description": "The clause that fired, or null when Cedar matched none (default-deny). Null is a real answer here and must stay distinguishable from an absent field. Platform-only."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why, in the writer's own vocabulary -- a `reasons.Reason` code on a platform refusal, free text elsewhere."
+    },
+    "step": {
+      "type": "string",
+      "description": "Workflow position, NOT time order (a design note point 9). A string because participants number steps `3`, `3a` and `retry-3`."
+    },
+    "detail": {
+      "type": "string",
+      "description": "Human-readable context for the timeline rendering."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["phase"],
+        "properties": { "phase": { "const": "decision" } }
+      },
+      "then": { "$ref": "#/$defs/decisionPhase" },
+      "else": { "$ref": "#/$defs/nonDecisionPhase" }
+    }
+  ],
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alias"],
+      "properties": {
+        "kind": {
+          "enum": ["Model", "Tool", "Agent", "Evidence"],
+          "description": "The three governed-asset CRDs, plus Evidence. Evidence is not a CRD and names no governed asset: it is the fronted evidence service itself, and it must be expressible because a read of the audit trail is a governed action that is itself recorded (a design note point 5)."
+        },
+        "alias": { "type": "string", "minLength": 1 }
+      },
+      "description": "The governed asset. `alias` is required whenever the object is present: an asset object naming no asset is not evidence of anything."
+    },
+    "decisionPhase": {
+      "required": ["action_id", "principal", "asset", "decision"],
+      "properties": {
+        "attested_by": {
+          "const": "modaas-authz",
+          "description": "a design note point 4 makes modaas-authz the sole writer of decision records, and the DD's acceptance criteria require a reader to reject one written by anything else."
+        },
+        "principal": { "minLength": 1 },
+        "asset": { "required": ["kind", "alias"] }
+      },
+      "description": "a design note point 4's field list: the decision record must carry the join keys, the attested principal, the asset and the verdict, or it cannot answer `authorized` for a run."
+    },
+    "nonDecisionPhase": {
+      "properties": {
+        "attested_by": {
+          "not": { "const": "modaas-authz" },
+          "description": "modaas-authz writes decision records and nothing else, so this claim on any other phase cannot be true. A reader that trusted the field directly, rather than going through is_platform_attested, would render it as platform evidence."
+        }
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["decision"] },
+          { "required": ["matched_policy"] },
+          { "required": ["policy_version"] }
+        ]
+      },
+      "description": "The platform's fields are refused outside the decision phase rather than ignored: an agent-written record carrying `decision: ALLOW` would launder the fact a design note refuses to take from the agent, and silently dropping it would make the attempt invisible."
+    }
+  }
+}

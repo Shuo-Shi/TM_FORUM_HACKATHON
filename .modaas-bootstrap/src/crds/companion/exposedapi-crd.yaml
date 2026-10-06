@@ -1,0 +1,283 @@
+# ExposedAPI CRD — MODaaS ODA Canvas
+# Represents a component's exposed API with type-specific configuration for
+# MCP (tool server), A2A (agent endpoint), and OpenAPI (standard REST).
+# Created by the Component Operator, reconciled by the API Management Operator.
+# Each apiType triggers different operator behavior: MCP → AgentCore Gateway
+# target + Cedar policy, A2A → AgentCore Runtime deployment, OpenAPI → standard
+# Istio VirtualService routing.
+#
+# Requirements: 3.1, 3.2, 3.3, 3.4
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: exposedapis.oda.tmforum.org
+  labels:
+    app.kubernetes.io/part-of: modaas-canvas
+    app.kubernetes.io/managed-by: api-mgmt-operator
+  annotations:
+    oda.tmforum.org/crd-version: "v1alpha1"
+spec:
+  group: oda.tmforum.org
+  scope: Namespaced
+  names:
+    plural: exposedapis
+    singular: exposedapi
+    kind: ExposedAPI
+    shortNames: [eapi]
+  versions:
+    # --- v1 (served, NOT storage) ---
+    # Canvas's canvas-resource-inventory queries ExposedAPIs at group/version
+    # oda.tmforum.org/v1 (it asks for the GA version, not v1alpha1). Without a
+    # served v1 the K8s apiserver returns 404 for
+    #   GET /apis/oda.tmforum.org/v1/namespaces/components/exposedapis
+    # which makes Canvas's inventory list call fail with a 500 (verified in
+    # canvas-resource-inventory logs, 2026-06-12). Serving v1 with the SAME
+    # schema lets Canvas's READ path resolve. Storage stays on v1alpha1 (the
+    # established storage version): adding a served version does NOT migrate
+    # stored objects and is backward-compatible. K8s serves identical bytes for
+    # both versions because the schema is the same (no conversion webhook
+    # needed). When the MoDaaS ExposedAPI contract is promoted to GA, flip
+    # storage to v1 in a separate, deliberate migration.
+    - name: v1
+      served: true
+      storage: false
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: ["spec"]
+          properties:
+            spec:
+              type: object
+              required: ["apiType", "componentName", "namespace", "endpoint"]
+              description: "Declares a component API exposure with type-specific configuration"
+              properties:
+                # --- Common fields (Req 3.1) ---
+                apiType:
+                  type: string
+                  enum: [MCP, A2A, OpenAPI]
+                  description: "API type — determines which operator reconciliation path is used"
+                componentName:
+                  type: string
+                  description: "ODA Component name that exposes this API"
+                namespace:
+                  type: string
+                  description: "Namespace where the component is deployed"
+                endpoint:
+                  type: string
+                  description: "Service endpoint URL for the exposed API"
+                # --- MCP-specific fields (Req 3.2) ---
+                toolServerName:
+                  type: string
+                  description: "MCP tool server name for AgentCore Gateway target registration"
+                cedarPolicyDocument:
+                  type: string
+                  description: "Cedar policy document for fine-grained tool-level authorization"
+                semanticSearchEnabled:
+                  type: boolean
+                  default: true
+                  description: "Enable semantic search indexing for MCP tool discovery"
+                # --- A2A-specific fields (Req 3.3) ---
+                containerImage:
+                  type: string
+                  description: "Container image (ARM64) for AgentCore Runtime deployment — required for A2A"
+                agentSkills:
+                  type: array
+                  description: "List of agent skill identifiers for Agent Registry and discovery"
+                  items:
+                    type: string
+                allowedClients:
+                  type: array
+                  description: "List of client identifiers allowed to invoke this A2A agent"
+                  items:
+                    type: string
+                memoryEnabled:
+                  type: boolean
+                  default: false
+                  description: "Enable AgentCore Memory for cross-session context retention"
+            # --- Status (Req 3.4) ---
+            status:
+              type: object
+              description: "Resolved configuration written by the API Management Operator during reconciliation"
+              properties:
+                gatewayTargetId:
+                  type: string
+                  description: "AgentCore Gateway target ID (MCP type — from CreateGatewayTarget)"
+                runtimeId:
+                  type: string
+                  description: "AgentCore Runtime ID (A2A type — from CreateAgentRuntime)"
+                virtualServiceName:
+                  type: string
+                  description: "Istio VirtualService name created for this API"
+                ready:
+                  type: boolean
+                  description: "True when all type-specific resources are provisioned and healthy"
+                conditions:
+                  type: array
+                  description: "Condition array tracking reconciliation progress per step"
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: "Condition type (e.g., VirtualServiceReady, GatewayTargetReady, RuntimeReady, CedarPolicyApplied)"
+                      status:
+                        type: string
+                        enum: ["True", "False", "Unknown"]
+                      reason:
+                        type: string
+                        description: "Machine-readable reason code"
+                      message:
+                        type: string
+                        description: "Human-readable message with details"
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Type
+          type: string
+          jsonPath: .spec.apiType
+          description: "API type (MCP, A2A, OpenAPI)"
+        - name: Component
+          type: string
+          jsonPath: .spec.componentName
+          description: "Owning component"
+        - name: Endpoint
+          type: string
+          jsonPath: .spec.endpoint
+          description: "Service endpoint URL"
+        - name: Ready
+          type: boolean
+          jsonPath: .status.ready
+          description: "Whether all resources are provisioned"
+        - name: Gateway
+          type: string
+          jsonPath: .status.gatewayTargetId
+          description: "AgentCore Gateway target ID (MCP)"
+        - name: Runtime
+          type: string
+          jsonPath: .status.runtimeId
+          description: "AgentCore Runtime ID (A2A)"
+    # --- v1alpha1 (served + storage) ---
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: ["spec"]
+          properties:
+            spec:
+              type: object
+              required: ["apiType", "componentName", "namespace", "endpoint"]
+              description: "Declares a component API exposure with type-specific configuration"
+              properties:
+                # --- Common fields (Req 3.1) ---
+                apiType:
+                  type: string
+                  enum: [MCP, A2A, OpenAPI]
+                  description: "API type — determines which operator reconciliation path is used"
+                componentName:
+                  type: string
+                  description: "ODA Component name that exposes this API"
+                namespace:
+                  type: string
+                  description: "Namespace where the component is deployed"
+                endpoint:
+                  type: string
+                  description: "Service endpoint URL for the exposed API"
+                # --- MCP-specific fields (Req 3.2) ---
+                toolServerName:
+                  type: string
+                  description: "MCP tool server name for AgentCore Gateway target registration"
+                cedarPolicyDocument:
+                  type: string
+                  description: "Cedar policy document for fine-grained tool-level authorization"
+                semanticSearchEnabled:
+                  type: boolean
+                  default: true
+                  description: "Enable semantic search indexing for MCP tool discovery"
+                # --- A2A-specific fields (Req 3.3) ---
+                containerImage:
+                  type: string
+                  description: "Container image (ARM64) for AgentCore Runtime deployment — required for A2A"
+                agentSkills:
+                  type: array
+                  description: "List of agent skill identifiers for Agent Registry and discovery"
+                  items:
+                    type: string
+                allowedClients:
+                  type: array
+                  description: "List of client identifiers allowed to invoke this A2A agent"
+                  items:
+                    type: string
+                memoryEnabled:
+                  type: boolean
+                  default: false
+                  description: "Enable AgentCore Memory for cross-session context retention"
+            # --- Status (Req 3.4) ---
+            status:
+              type: object
+              description: "Resolved configuration written by the API Management Operator during reconciliation"
+              properties:
+                gatewayTargetId:
+                  type: string
+                  description: "AgentCore Gateway target ID (MCP type — from CreateGatewayTarget)"
+                runtimeId:
+                  type: string
+                  description: "AgentCore Runtime ID (A2A type — from CreateAgentRuntime)"
+                virtualServiceName:
+                  type: string
+                  description: "Istio VirtualService name created for this API"
+                ready:
+                  type: boolean
+                  description: "True when all type-specific resources are provisioned and healthy"
+                conditions:
+                  type: array
+                  description: "Condition array tracking reconciliation progress per step"
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: "Condition type (e.g., VirtualServiceReady, GatewayTargetReady, RuntimeReady, CedarPolicyApplied)"
+                      status:
+                        type: string
+                        enum: ["True", "False", "Unknown"]
+                      reason:
+                        type: string
+                        description: "Machine-readable reason code"
+                      message:
+                        type: string
+                        description: "Human-readable message with details"
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Type
+          type: string
+          jsonPath: .spec.apiType
+          description: "API type (MCP, A2A, OpenAPI)"
+        - name: Component
+          type: string
+          jsonPath: .spec.componentName
+          description: "Owning component"
+        - name: Endpoint
+          type: string
+          jsonPath: .spec.endpoint
+          description: "Service endpoint URL"
+        - name: Ready
+          type: boolean
+          jsonPath: .status.ready
+          description: "Whether all resources are provisioned"
+        - name: Gateway
+          type: string
+          jsonPath: .status.gatewayTargetId
+          description: "AgentCore Gateway target ID (MCP)"
+        - name: Runtime
+          type: string
+          jsonPath: .status.runtimeId
+          description: "AgentCore Runtime ID (A2A)"

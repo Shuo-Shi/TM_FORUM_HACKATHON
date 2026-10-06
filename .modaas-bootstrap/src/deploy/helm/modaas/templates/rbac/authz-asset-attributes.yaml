@@ -1,0 +1,43 @@
+# RBAC for the authz gateway's resource-attribute resolution (D4).
+#
+# asset_attributes.data_classification reads the governed CR to learn
+# spec.governance.dataClassification, replacing the caller-supplied
+# x-modaas-data-class header that used to decide this. Without this Role the read
+# is 403, the resolver raises AssetStoreUnavailable, and -- because the ext_authz
+# hook is FailClosed -- every governed call refuses with
+# "asset-store-unavailable". That is the intended failure: a governed call must
+# not be decided on attributes the doorman could not read.
+#
+# Namespaced to the component namespace (where governed CRs live) rather than a
+# ClusterRole: the doorman has no business reading assets outside the namespace
+# this install governs. Least privilege: one verb, two resources, no list/watch,
+# no status subresource.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: modaas-authz-asset-attributes
+  namespace: {{ .Values.global.componentNamespace | default "components" }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authz-gateway
+rules:
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["toolconfigs", "modelconfigs"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: modaas-authz-asset-attributes
+  namespace: {{ .Values.global.componentNamespace | default "components" }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: authz-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: modaas-authz-asset-attributes
+subjects:
+  - kind: ServiceAccount
+    name: modaas-authz
+    namespace: {{ .Values.global.namespace | default "modaas-system" }}

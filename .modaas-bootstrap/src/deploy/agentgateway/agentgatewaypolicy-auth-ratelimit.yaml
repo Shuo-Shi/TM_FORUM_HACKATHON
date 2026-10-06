@@ -1,0 +1,120 @@
+# Perimeter rate limiting, both listeners. Authentication is NOT here any more.
+#
+# History: this policy carried apiKeyAuthentication on `llm` (it closed M7 --
+# unconfigured, the listener served any caller at http=200). W4-D then found
+# that the gateway's own key check consumed the Authorization header before the
+# ext_authz identity hook ever saw it, so the two cannot coexist on one listener.
+# The doorman (modaas-authz) validates API keys itself -- SHA-256 digest against
+# agw-apikeys, keycloak_identity.establish_from_api_key -- and ALSO establishes
+# Keycloak-JWT and SigV4 identities, which apiKeyAuthentication never could.
+# With the hook promoted to `llm` + `http` (a hardening note, 2026-09-20,
+# agentgatewaypolicy-authz-hook.yaml), authentication moved there. Removing it
+# here is the step app.py:175 already described as done ("retired from the llm
+# section") but the manifest never reflected.
+#
+# What stays: rate limiting, agentgateway-native (G35 closed), now on BOTH
+# listeners -- `http` (MCP) previously had no policy of any kind.
+#
+# a hardening note (2026-09-20): a request-count limit bounds RATE, not SPEND. 100 requests
+# per minute of 200k-token prompts is a different bill from 100 requests of
+# 200-token prompts, and only the second is what a request cap implies. The
+# `tokens` field on the same local[] entry type is the spend control, verified
+# present on the live CRD (agentgatewaypolicies.agentgateway.dev, keys:
+# burst/requests/tokens/unit) and implemented upstream as a token bucket charged
+# post-completion from the provider's reported usage, answering 429 on refusal.
+#
+# Sizing, from this repo's own rate source (modaas-model-cost-catalog,
+# nvidia.nemotron-nano-9b-v2: $0.06 per 1M input, $0.23 per 1M output):
+#
+#   2,500,000 tokens/hour, worst case ALL output  -> 2.5 x $0.23  = $0.575/hour
+#                          realistic 80/20 in/out -> 2.5 x $0.094 = $0.235/hour
+#   over an 18-hour event                         -> $10.35 worst / $4.23 likely
+#
+# Headroom check: 16 teams x 20 requests/hour x 2,000 tokens = 640k tokens/hour
+# of expected use, so this ceiling is ~4x expected demand -- high enough not to
+# throttle honest work, low enough that a runaway loop costs tens of cents an
+# hour rather than an unbounded amount.
+#
+# SCOPE, stated precisely: this is a PERIMETER-WIDE ceiling per listener, not a
+# per-team or per-alias budget. This CRD version's local[] entry has no keying
+# field, so one team can consume the whole allowance and the others get 429.
+# That is an acceptable blast-radius bound for an event and NOT acceptable as a
+# tenancy control. Per-alias budgets require the projection designed in
+# ADR-H01-token-and-spend-budgets.md (ModelConfig.spec.budget -> a policy per
+# route), which is Phase 2.
+#
+# NOT YET PROVEN LIVE. The field is on the CRD and the upstream implementation
+# is the one cited above, but no event has yet exercised a 429 from the token
+# bucket. Proving it is a named step for the next validation run; until then
+# this is a declared control, not an observed one.
+#
+# `llm-tls` ADDED 2026-09-26 (lane P). This policy named only `llm`, so the
+# :8443 TLS listener W4-A added served LLM traffic with no rate limit and no
+# spend ceiling -- and it is a live serving path, not a spare: operators/shared/
+# agentgateway_route.py `_parent_refs()` defaults to ["llm", "llm-tls"], so
+# every governed ModelConfig already publishes an AgentgatewayModel attached to
+# it. A ceiling that one of the two LLM doors ignores is not a ceiling.
+#
+# Why enumerated here rather than Gateway-wide (the shape
+# agentgatewaypolicy-authz-hook.yaml moved to): `modaas-mcp-ratelimit` below
+# also sets `traffic.rateLimit`, with a different value set (no token entry --
+# MCP calls carry no LLM tokens). Two policies setting the SAME field at the
+# SAME target level tie, and agentgateway "picks one policy's value for that
+# field and silently drops the rest", non-deterministically across controller
+# restarts, while both still report Accepted and Attached
+# (docs/kubernetes/latest/documentation/about/policies/target-merge.md). Listener
+# scoping is what keeps the two sets distinct. The cost of enumerating is that a
+# future LLM listener must be added here too, which is exactly what
+# tests/test_agentgateway_perimeter_manifests.py
+# ::test_model_serving_listeners_have_a_token_ceiling fails on.
+#
+# SIZING: the numbers above are unchanged, and whether the two listeners SHARE
+# one bucket or get one each is UNVERIFIED. This file's own scope note reads the
+# limit as "PERIMETER-WIDE ... per listener", which would make the worst case
+# 2x the figures above -- $1.15/hour all-output, $0.47 realistic, still ~$21 over
+# an 18-hour event, and still ~4x expected demand once demand is also split
+# across two doors. Not re-sized on an unverified reading. What settles it:
+#   kubectl -n agentgateway-system logs deploy/modaas-agw | grep -i ratelimit
+# while driving both :8081 and :8443 past the ceiling, or reading the token
+# bucket's key in the pinned upstream source.
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: modaas-llm-auth
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: modaas-agw
+      sectionName: llm
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: modaas-agw
+      sectionName: llm-tls
+  traffic:
+    rateLimit:
+      local:
+        - requests: 100
+          unit: Minutes
+        # a hardening note spend ceiling. Separate entry because the window differs from the
+        # request limit's; both apply.
+        - tokens: 2500000
+          unit: Hours
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: modaas-mcp-ratelimit
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: modaas-agw
+      sectionName: http
+  traffic:
+    rateLimit:
+      local:
+        - requests: 100
+          unit: Minutes

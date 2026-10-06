@@ -1,0 +1,8 @@
+1 import OK
+2 prompts: ['customer', 'it', 'network']
+3 classify: gather-evidence escalate auto-resolve
+Traceback (most recent call last):
+  File "<stdin>", line 27, in <module>
+  File "/home/ec2-user/agents/team-agent/agent.py", line 157, in post_audit
+    f"verdict={verdict}")
+UnboundLocalError: local variable 'verdict' referenced before assignment

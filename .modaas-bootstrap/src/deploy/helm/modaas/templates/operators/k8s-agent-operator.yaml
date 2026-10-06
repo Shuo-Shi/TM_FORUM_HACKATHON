@@ -1,0 +1,224 @@
+{{- /*
+k8s-agent-operator — AgentConfig, provider=kubernetesPod (a design note operator scope).
+
+DISABLED BY DEFAULT (operators.k8sAgent.enabled=false). With the a design note graft
+still present in aws-agent-operator, both operators would reconcile the same
+agent-<name> Deployment, so enabling this is a deliberate migration step, not an
+upgrade side effect. See values.yaml for the three-step order.
+
+RBAC here is deliberately NARROWER than aws-agent-operator's:
+  - no create/delete on agentconfigs (the operator never creates or deletes one)
+  - read-only on modelconfigs/toolconfigs (dependency gate + provider resolution)
+  - serviceaccounts read-only (a design note leg 1 reads annotations; never writes an SA)
+  - networkpolicies added (a design note leg 2)
+  - NO networking.istio.io / security.istio.io / telemetry.istio.io /
+    agentgateway.dev: a pod's network posture is the NetworkPolicy above, and a
+    ServiceEntry is inert in a cluster with no istio-proxy sidecars
+    (STATUS.md "Enforcement reality")
+  - NO secrets of any kind: the perimeter credential is referenced by name as a
+    secretKeyRef in the agent Pod; this operator never reads its value
+*/ -}}
+{{- if .Values.operators.k8sAgent.enabled }}
+{{- $op := .Values.operators.k8sAgent }}
+{{- $name := $op.name }}
+{{- $ns := .Values.global.namespace }}
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- range $k, $v := . }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  {{- end }}
+---
+{{- end }}
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["kopf.dev"]
+    resources: ["clusterkopfpeerings"]
+    verbs: ["list", "watch", "patch", "get", "create"]
+  - apiGroups: ["", "events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch", "get"]
+  # kopf needs this; the a design note leg-3 enforcement probe reads the same list.
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["list", "watch", "get"]
+  # The asset this operator governs. No create, no delete.
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["agentconfigs", "agentconfigs/status"]
+    verbs: ["list", "watch", "get", "patch", "update"]
+  # Cross-asset dependency gate + provider resolution for env injection. READ ONLY.
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["modelconfigs", "modelconfigs/status", "toolconfigs", "toolconfigs/status"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["registries", "registries/status"]
+    verbs: ["list", "watch", "get", "patch", "update"]
+  # The three objects this operator owns for a governed pod agent.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
+  # a design note leg 1: read the agent pod's ServiceAccount annotations. READ ONLY --
+  # the operator never creates or mutates a ServiceAccount.
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get", "list", "watch"]
+  # a design note leg podIdentityAssociation: an EKS Pod Identity association is an EKS
+  # API resource with no Kubernetes representation and no ServiceAccount
+  # annotation, so the SA read above cannot see it. The only cluster-visible
+  # evidence is the witness EKS injects into the pod
+  # (AWS_CONTAINER_CREDENTIALS_FULL_URI + the eks-pod-identity-token volume) --
+  # docs.aws.amazon.com/eks/latest/userguide/pod-id-how-it-works.html. Without
+  # this verb the leg is permanently 'unverified', which is the
+  # declared-but-not-enforced shape. READ ONLY; the operator owns Deployments,
+  # never Pods directly.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # a design note Canvas-first emission.
+  - apiGroups: ["oda.tmforum.org"]
+    resources:
+      - "components"
+      - "components/status"
+      - "identityconfigs"
+      - "identityconfigs/status"
+      - "dependentapis"
+      - "dependentapis/status"
+      - "publishednotifications"
+      - "publishednotifications/status"
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # Cedar policy projection (a design note) writes into a label-scoped ConfigMap in
+  # modaas-system for the PDP watcher.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list", "watch", "get"]
+  # perimeter_url resolves the gateway LoadBalancer address.
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $ns }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+spec:
+  replicas: {{ $op.replicas }}
+  selector:
+    matchLabels:
+      {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 8 }}
+        app.kubernetes.io/part-of: modaas-canvas
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ $name }}
+      containers:
+        - name: operator
+          image: {{ include "modaas.image" (dict "Values" .Values "Chart" .Chart "component" "k8sAgent") }}
+          imagePullPolicy: {{ include "modaas.imagePullPolicy" (dict "Values" .Values "component" "k8sAgent") }}
+          env:
+            - name: COMPONENT_NAMESPACE
+              value: {{ .Values.global.componentNamespace | quote }}
+            - name: LOGGING
+              value: {{ $op.logging | quote }}
+            - name: MODAAS_REGISTRY_MODE
+              value: {{ $op.registryMode | quote }}
+            - name: MODAAS_REGISTRY_REGION
+              value: {{ .Values.global.region | default "us-east-1" | quote }}
+            # Region is required chart-wide (it defaulted to us-west-2 until
+            # 2026-09-23 and silently pointed consumers cross-region). This
+            # operator makes no AWS API call, but shared/backings reads the
+            # variable, so it is passed through rather than left unset.
+            - name: AWS_REGION
+              value: {{ required "global.aws.region must be set (--set-string global.aws.region=<region>)" .Values.global.aws.region | quote }}
+            - name: KOPF_PEERING_NAME
+              value: {{ $op.peering.name | default "modaas-k8s-agent" | quote }}
+            # a design note leg 2: the only namespace (besides DNS) the per-agent
+            # NetworkPolicy permits egress to.
+            - name: MODAAS_GATEWAY_NAMESPACE
+              value: {{ $op.gatewayNamespace | quote }}
+            {{- with $op.istiodNamespace }}
+            - name: MODAAS_ISTIOD_NAMESPACE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- if $op.networkPolicy.requireEnforcement }}
+            - name: MODAAS_REQUIRE_NETWORKPOLICY_ENFORCEMENT
+              value: "true"
+            {{- end }}
+            {{- if .Values.gatewayCredential.secretName }}
+            # a hardening note: name/key of the Secret (in the component namespace) holding
+            # the perimeter bearer credential. Referenced by name in the agent
+            # Pod's env as a secretKeyRef; the operator never reads the value,
+            # so it needs no secrets RBAC.
+            - name: MODAAS_GATEWAY_CREDENTIAL_SECRET
+              value: {{ .Values.gatewayCredential.secretName | quote }}
+            - name: MODAAS_GATEWAY_CREDENTIAL_SECRET_KEY
+              value: {{ .Values.gatewayCredential.secretKey | quote }}
+            {{- end }}
+            {{- with $op.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml $op.resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+      {{- with $op.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

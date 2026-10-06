@@ -1,0 +1,269 @@
+{{- if .Values.operators.agent.enabled }}
+{{- $op := .Values.operators.agent }}
+{{- $name := $op.name }}
+{{- $ns := .Values.global.namespace }}
+{{- if .Values.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+  {{- with $op.irsaRoleArn }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ . | quote }}
+    {{- range $k, $v := $.Values.serviceAccount.annotations }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+  {{- end }}
+---
+{{- end }}
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["kopf.dev"]
+    resources: ["clusterkopfpeerings"]
+    verbs: ["list", "watch", "patch", "get", "create"]
+  - apiGroups: ["", "events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch", "get"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["list", "watch", "get"]
+  # AgentConfig + cross-asset reads (ModelConfig, ToolConfig for dep validation)
+  - apiGroups: ["oda.tmforum.org"]
+    resources:
+      - "agentconfigs"
+      - "agentconfigs/status"
+      - "modelconfigs"
+      - "modelconfigs/status"
+      - "toolconfigs"
+      - "toolconfigs/status"
+    verbs: ["list", "watch", "get", "patch", "update", "create", "delete"]
+  - apiGroups: ["oda.tmforum.org"]
+    resources: ["registries", "registries/status"]
+    verbs: ["list", "watch", "get", "patch", "update"]
+  - apiGroups: [""]
+    # Cedar policy projection (a design note) writes the policy into a label-scoped ConfigMap in
+    # modaas-system for the PDP's watcher to hot-load. Without this the projection raised a bare
+    # ApiException that the code swallowed as "non-blocking", so per-tool authorization could never
+    # work in a chart-deployed cluster while the CRD kept accepting cedarPolicy as if it did.
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["list", "watch", "get"]
+  # a design note/a design note kubernetesPod hosting provider: the operator owns the
+  # agent-<name> Deployment + Service lifecycle. Missing on the workshop
+  # cluster 2026-09-04 (DeploymentReadFailed) -- the ClusterRole predated
+  # the kubernetesPod path landing.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
+  # a design note Canvas-First TMF emission
+  - apiGroups: ["oda.tmforum.org"]
+    resources:
+      - "components"
+      - "components/status"
+      - "identityconfigs"
+      - "identityconfigs/status"
+      - "dependentapis"
+      - "dependentapis/status"
+      - "publishednotifications"
+      - "publishednotifications/status"
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["networking.istio.io"]
+    resources: ["virtualservices", "serviceentries", "sidecars", "destinationrules"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  # path). Emission is still gated at runtime by MODAAS_PROGRAM_AGENTGATEWAY, but the permission has to
+  # exist or the operator reports ProgramFailed with a 403 that looks like a code bug.
+  - apiGroups: ["agentgateway.dev"]
+    resources: ["agentgatewaymodels"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["security.istio.io"]
+    resources: ["authorizationpolicies", "peerauthentications", "requestauthentications"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: ["telemetry.istio.io"]
+    resources: ["telemetries"]
+    verbs: ["list", "watch", "get", "create", "patch", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $ns }}
+{{- if eq ($op.agentCoreGatewayCredential | default "") "sharedKey" }}
+---
+# sharedKey mode only: read the ONE gateway-key Secret in the component
+# namespace, so the operator can pass its value to AgentCore runtimes. No list,
+# no watch, no other Secret.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}-gateway-key
+  namespace: {{ .Values.global.componentNamespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: [{{ .Values.gatewayCredential.secretName | quote }}]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}-gateway-key
+  namespace: {{ .Values.global.componentNamespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}-gateway-key
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ $ns }}
+{{- end }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $ns }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 4 }}
+spec:
+  replicas: {{ $op.replicas }}
+  selector:
+    matchLabels:
+      {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "modaas.selectorLabels" (dict "name" $name) | nindent 8 }}
+        app.kubernetes.io/part-of: modaas-canvas
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ $name }}
+      containers:
+        - name: operator
+          image: {{ include "modaas.image" (dict "Values" .Values "Chart" .Chart "component" "agent") }}
+          imagePullPolicy: {{ include "modaas.imagePullPolicy" (dict "Values" .Values "component" "agent") }}
+          env:
+            - name: COMPONENT_NAMESPACE
+              value: {{ .Values.global.componentNamespace | quote }}
+            - name: LOGGING
+              value: {{ $op.logging | quote }}
+            - name: MODAAS_REGISTRY_MODE
+              value: {{ $op.registryMode | quote }}
+            - name: MODAAS_REGISTRY_REGION
+              value: {{ .Values.global.region | default "us-east-1" | quote }}
+            - name: AWS_DEFAULT_REGION
+              value: {{ required "global.aws.region must be set (--set-string global.aws.region=<region>)" .Values.global.aws.region | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.global.aws.region | quote }}
+            {{- with .Values.global.aws.accountId }}
+            - name: MODAAS_AWS_ACCOUNT_ID
+              value: {{ . | quote }}
+            {{- end }}
+            # The one platform execution role every MoDaaS-managed AgentCore
+            # runtime assumes (a design note Q1). Rendered unconditionally, including
+            # when empty: the operator has to be able to tell "not configured"
+            # from "configured empty" and name this value in its refusal.
+            - name: MODAAS_AGENTCORE_RUNTIME_ROLE_ARN
+              value: {{ $op.agentCoreRuntimeRoleArn | quote }}
+            - name: KOPF_PEERING_NAME
+              value: {{ $op.peering.name | default "modaas-agent" | quote }}
+            - name: KEYCLOAK_ADMIN_URL
+              value: {{ $op.keycloak.adminUrl | quote }}
+            - name: KEYCLOAK_REALM
+              value: {{ $op.keycloak.realm | quote }}
+            {{- if .Values.gatewayCredential.secretName }}
+            # a hardening note: name/key of the Secret (in the component namespace) holding
+            # the perimeter bearer credential. The operator references it by
+            # name in the agent Pod's env as a secretKeyRef; it never reads the
+            # value itself, so no secrets RBAC is required here.
+            - name: MODAAS_GATEWAY_CREDENTIAL_SECRET
+              value: {{ .Values.gatewayCredential.secretName | quote }}
+            - name: MODAAS_GATEWAY_CREDENTIAL_SECRET_KEY
+              value: {{ .Values.gatewayCredential.secretKey | quote }}
+            {{- end }}
+            {{- if $op.agentCoreGatewayCredential }}
+            # AgentCore credential mode (values.yaml operators.agent
+            # .agentCoreGatewayCredential). sharedKey is the only mode that
+            # reads a Secret value; the Role below scopes it to one Secret.
+            - name: MODAAS_AGENTCORE_GATEWAY_CREDENTIAL
+              value: {{ $op.agentCoreGatewayCredential | quote }}
+            - name: MODAAS_GATEWAY_CREDENTIAL_NAMESPACE
+              value: {{ .Values.global.componentNamespace | quote }}
+            {{- end }}
+            {{- if $op.keycloak.adminUserSecretRef }}
+            - name: KEYCLOAK_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $op.keycloak.adminUserSecretRef.name }}
+                  key: {{ $op.keycloak.adminUserSecretRef.userKey }}
+                  optional: true
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $op.keycloak.adminUserSecretRef.name }}
+                  key: {{ $op.keycloak.adminUserSecretRef.passwordKey }}
+                  optional: true
+            {{- end }}
+            {{- with $op.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml $op.resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+      {{- with $op.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $op.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+# NOTE: the default ServiceAccount for kubernetesPod-hosted agents
+# (components/modaas-agent-default) is defined ONCE, in
+# templates/rbac/agent-operator-kubernetespod.yaml, co-located with the
+# kubernetesPod provider RBAC. A second copy used to live here — the chart
+# then rendered the same SA twice and plain `helm install` failed 100% on a
+# fresh cluster with `serviceaccounts "modaas-agent-default" already exists`
+# (reported by <reviewer>, reproduced on account <account-id>, 2026-09-22; render
+# count proven 2 at pin 19e8f868). Do not re-add it here.

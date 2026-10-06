@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "3"
+    kopf.zalando.org/last-handled-configuration: |
+      {"spec":{"replicas":1,"selector":{"matchLabels":{"app":"velocityx-filesystem"}},"template":{"metadata":{"labels":{"app":"velocityx-filesystem"},"annotations":{"kubectl.kubernetes.io/restartedAt":"2026-10-05T16:33:04Z"}},"spec":{"volumes":[{"name":"app","configMap":{"name":"velocityx-filesystem-app","defaultMode":420}}],"containers":[{"name":"server","image":"public.ecr.aws/docker/library/python:3.12-slim","command":["python3","/app/server.py"],"ports":[{"containerPort":8080,"protocol":"TCP"}],"resources":{},"volumeMounts":[{"name":"app","mountPath":"/app"}],"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","securityContext":{},"schedulerName":"default-scheduler"}},"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxUnavailable":"25%","maxSurge":"25%"}},"revisionHistoryLimit":10,"progressDeadlineSeconds":600},"metadata":{"annotations":{"deployment.kubernetes.io/revision":"3"}}}
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"velocityx-filesystem","namespace":"components"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"velocityx-filesystem"}},"template":{"metadata":{"labels":{"app":"velocityx-filesystem"}},"spec":{"containers":[{"command":["python3","/app/server.py"],"image":"public.ecr.aws/docker/library/python:3.12-slim","name":"server","ports":[{"containerPort":8080}],"volumeMounts":[{"mountPath":"/app","name":"app"}]}],"volumes":[{"configMap":{"name":"velocityx-filesystem-app"},"name":"app"}]}}}}
+  creationTimestamp: "2026-10-05T15:34:46Z"
+  generation: 6
+  name: velocityx-filesystem
+  namespace: components
+  resourceVersion: "728313"
+  uid: b227b50e-3293-47cd-98ef-13f69d5544b0
+spec:
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-10-05T16:33:04Z"
+      labels:
+        app: velocityx-filesystem
+
+    spec:
+      containers:
+      - name: server
+
+        image: public.ecr.aws/docker/library/python:3.12-slim
+        imagePullPolicy: IfNotPresent
+
+        command:
+        - python3
+        - /app/server.py
+
+        env:
+        - name: WORKSPACE_ROOT
+          value: "/workspace"
+
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+
+        volumeMounts:
+        - name: app
+          mountPath: /app
+
+        - name: workspace
+          mountPath: /workspace
+
+        resources: {}
+
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+
+      volumes:
+      - name: app
+        configMap:
+          defaultMode: 420
+          name: velocityx-filesystem-app
+
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: velocityx-workspace
+# spec:
+#   progressDeadlineSeconds: 600
+#   replicas: 1
+#   revisionHistoryLimit: 10
+#   selector:
+#     matchLabels:
+#       app: velocityx-filesystem
+#   strategy:
+#     rollingUpdate:
+#       maxSurge: 25%
+#       maxUnavailable: 25%
+#     type: RollingUpdate
+#   template:
+#     metadata:
+#       annotations:
+#         kubectl.kubernetes.io/restartedAt: "2026-10-05T16:33:04Z"
+#       labels:
+#         app: velocityx-filesystem
+#     spec:
+#       containers:
+#       - command:
+#         - python3
+#         - /app/server.py
+#         image: public.ecr.aws/docker/library/python:3.12-slim
+#         imagePullPolicy: IfNotPresent
+#         name: server
+#         ports:
+#         - containerPort: 8080
+#           protocol: TCP
+#         resources: {}
+#         terminationMessagePath: /dev/termination-log
+#         terminationMessagePolicy: File
+#         volumeMounts:
+#         - mountPath: /app
+#           name: app
+#       dnsPolicy: ClusterFirst
+#       restartPolicy: Always
+#       schedulerName: default-scheduler
+#       securityContext: {}
+#       terminationGracePeriodSeconds: 30
+#       volumes:
+#       - configMap:
+#           defaultMode: 420
+#           name: velocityx-filesystem-app
+#         name: app
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-10-05T15:34:49Z"
+    lastUpdateTime: "2026-10-05T15:34:49Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-10-05T15:34:46Z"
+    lastUpdateTime: "2026-10-05T16:33:07Z"
+    message: ReplicaSet "velocityx-filesystem-64449b68c" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 6
+  readyReplicas: 1
+  replicas: 1
+  terminatingReplicas: 0
+  updatedReplicas: 1

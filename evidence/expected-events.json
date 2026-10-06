@@ -1,0 +1,20 @@
+[
+  {
+    "site_id": "SITE-DEN-12",
+    "rsrp_dbm": -98,
+    "assessment": "degraded: fronthaul packet loss reducing effective RSRP by 6 dB",
+    "confidence": 0.87
+  },
+  {
+    "site_id": "SITE-DEN-09",
+    "rsrp_dbm": -85,
+    "assessment": "healthy: no degradation detected",
+    "confidence": 0.95
+  },
+  {
+    "site_id": "SITE-PHX-04",
+    "rsrp_dbm": -105,
+    "assessment": "degraded: failing optic causing severe packet loss",
+    "confidence": 0.91
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "control_id": "7",
+  "control_name": "Event recording coverage",
+  "run_id": "fault-1791229835-4f2b02",
+  "window_utc": null,
+  "verdict": "BREACH",
+  "measured_value": "coverage 0.92 (11/12 checks)",
+  "threshold_limit": 1.0,
+  "threshold_version": "G-7-v1",
+  "effective_date": "2026-10-05",
+  "owner": "Afif Mazhar",
+  "evidence_ids": [
+    "2026-10-05T19:50:38Z",
+    "2026-10-05T19:50:44Z",
+    "2026-10-05T19:50:44Z",
+    "2026-10-05T19:50:44Z",
+    "2026-10-05T19:50:47Z",
+    "2026-10-05T19:51:15Z",
+    "2026-10-05T19:51:15Z",
+    "2026-10-05T19:51:15Z",
+    "2026-10-05T19:51:17Z",
+    "2026-10-05T19:51:28Z",
+    "2026-10-05T19:51:28Z",
+    "2026-10-05T19:51:28Z"
+  ],
+  "note": "failed: guardrail verdict on every invocation",
+  "evaluated_at": "2026-10-05T20:22:27.098217+00:00",
+  "sha256": "027f5238d89d73a7c6be25b6212f56a69c631c8ff700aaa1b450a9953cd3243e"
+}

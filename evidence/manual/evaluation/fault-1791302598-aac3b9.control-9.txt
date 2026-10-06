@@ -1,0 +1,21 @@
+CONTROL_ID        : 9
+CONTROL_NAME      : Drift and performance
+RUN_ID            : fault-1791302598-aac3b9
+
+THRESHOLD_VERSION : AIA-ARC-006-v1
+EFFECTIVE_DATE    : 2026-10-05
+OWNER             : VelocityX
+BASELINE_VALUE    : 1500.0
+DRIFT_LIMIT_PCT   : 10
+
+VERDICT           : BREACH
+MEASURED_VALUE    : 2011.69
+UNIT              : ms average latency
+CURRENT_VALUE     : 2011.69
+DRIFT_PERCENT     : 34.11
+INTERPRETATION    : 34.11% latency degradation versus baseline
+EVIDENCE_COUNT    : 26
+EVIDENCE_IDS      : 87ac917e-14b5-4d8c-acf1-3720fb82e9b4, 57ad7a10-aca1-4581-80d0-07a907fd2493, fe69a768-7ac7-46df-b6bd-4870a1692faf, 4a701650-8202-4868-84f9-9cd12a1f3506, b31871a3-0f93-4ba9-a589-b99db48055ec, 33310307-ce06-404b-94c6-d45a89ff63d6, 4382c386-7ac6-4863-b746-865066ec411c, 058fc21b-44f0-4077-8592-73b3e09aafeb, c11ab723-6c02-4313-95a2-c8eb7c64644e, 23bc0f1f-984d-47ef-be51-bb774e5da50b, 8dd0232d-0c29-4ccd-8e1f-748676eddb92, 95053379-21db-420b-9f65-fba8b8147c92, 2521cfb1-fe13-4e76-a8f2-26c19fea49bc, 1452095f-4d69-475f-a979-c037b77e37f3, 0987bf0a-e2f9-4c2c-8fa5-7db1d941401e, 14631ea4-c8e4-4647-9dcd-d036c19caa2e, 06bd02fc-a074-4664-b12c-83c30833406a, 2a852ec2-4066-4d2d-abe5-3f79c3836aa9, c6157ad8-4122-41be-9bf0-c4f9f6d47f63, b863db88-e05d-4369-9aa5-dbe5e5be5cc2, abba2e63-49a5-4467-a803-d1f618299439, 68f97179-375c-4c0d-b442-2814d12a2968, 764a0fcd-17cf-4d4a-aa18-8706e83b0ff2, 301aa311-ffda-45c8-b019-6ac40e7bdda0, 174e68aa-3bb7-4938-81b1-826367b02d59, 99b5d411-8d26-4561-9169-1bba8c500a9a
+NOTE              : baseline source: register threshold
+VERDICT_FILE      : /home/ec2-user/evidence/verdicts/v-9-fault-1791302598-aac3b9-9b706e3dbe4b.json
+------------------------------------------------------------------------------

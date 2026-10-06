@@ -1,0 +1,38 @@
+AUDIT TRAIL -- 12 records
+================================================================
+ 1. [2026-10-05T20:24:11Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791231849-f0581c
+    trace_id=3059b43f360d4be295aa313cb5a27766 customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T20:24:19Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791231849-f0581c
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791231849-f0581c trace_id=3059b43f360d4be295aa313cb5a27766 result_summary=- Impacted customers: CUST-1001 (Meridian Logistic
+ 3. [2026-10-05T20:24:19Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791231849-f0581c
+    trace_id=3059b43f360d4be295aa313cb5a27766 governed call via alias nemotron-super-120b: http_status=200
+ 4. [2026-10-05T20:24:19Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791231849-f0581c
+    disposition=undetermined, decision='- Impacted customers: CUST-1001 (Meridian Logistics), CUST-1002 (Aurora Health Group), CUST-2087 (Northwind Retail), CUST-4455 (Summit Energy), CUST-6201 (Pacific T
+ 5. [2026-10-05T20:24:22Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791231849-f0581c
+    trace_id=bc7b88b2e2ae43f5bade033680992d91 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T20:24:35Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791231849-f0581c
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791231849-f0581c trace_id=bc7b88b2e2ae43f5bade033680992d91 result_summary=- **Incident disposition**: Undetermined (no runbook found
+ 7. [2026-10-05T20:24:35Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791231849-f0581c
+    trace_id=bc7b88b2e2ae43f5bade033680992d91 governed call via alias nemotron-nano-9b: http_status=200
+ 8. [2026-10-05T20:24:35Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791231849-f0581c
+    disposition=escalate, decision='- **Incident disposition**: Undetermined (no runbook found for INC-581c; requires escalation or manual resolution).  \n- **Action**: Escalate to network team for fronth
+ 9. [2026-10-05T20:24:38Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791231849-f0581c
+    trace_id=88ec1ff5562542838439b452c0260fb2 network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T20:24:46Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791231849-f0581c
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791231849-f0581c trace_id=88ec1ff5562542838439b452c0260fb2 result_summary=- **Probable root cause:** Fronthaul degradation at SIT
+11. [2026-10-05T20:24:46Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791231849-f0581c
+    trace_id=88ec1ff5562542838439b452c0260fb2 governed call via alias nemotron-super-120b: http_status=200
+12. [2026-10-05T20:24:46Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791231849-f0581c
+    disposition=auto-resolve, decision='- **Probable root cause:** Fronthaul degradation at SITE-DEN-12 (scenario S1-fronthaul-degradation) causing packet loss (4.2%) and latency (31 ms p95) on DU-DEN-12-

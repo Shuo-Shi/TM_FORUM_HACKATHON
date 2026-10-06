@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-agent-operator
+  namespace: modaas-system
+  labels:
+    app.kubernetes.io/name: aws-agent-operator
+    app.kubernetes.io/part-of: modaas-canvas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aws-agent-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aws-agent-operator
+        app.kubernetes.io/part-of: modaas-canvas
+    spec:
+      serviceAccountName: aws-agent-operator
+      containers:
+        - name: operator
+          image: 111122223333.dkr.ecr.us-west-2.amazonaws.com/modaas/aws-agent-operator:latest
+          imagePullPolicy: Always
+          env:
+            - name: COMPONENT_NAMESPACE
+              value: components
+            - name: LOGGING
+              value: "20"
+            # KEYCLOAK_* env removed 2026-06-14: pointed at the retired canvas-identity
+            # ORPHAN Keycloak + dead `modaas` realm and carried a plaintext admin password.
+            # These were unread by the operator (it emits IdentityConfig CRs; the Canvas
+            # identityconfig-operator targets canvas-keycloak/realm odari). Leaving them in
+            # would re-inject the orphan pointer + plaintext secret on the next redeploy. See a design note.
+            - name: MODAAS_REGISTRY_MODE
+              value: real
+            - name: AWS_DEFAULT_REGION
+              value: us-west-2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

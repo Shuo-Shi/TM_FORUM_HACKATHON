@@ -1,0 +1,171 @@
+# The PDP-behind-ext_authz identity hook (a design note / a design note). PROMOTED 2026-09-20
+# (a hardening note, owner approval: Milind, "land h-02"): attached to the production `llm`
+# listener AND the `http` (MCP) listener. Until this commit it targeted
+# `llm-canary` -- a listener the Gateway does not define -- so the hook was
+# attached to nothing, the PDP evaluated zero requests, and every governed
+# asset held a Keycloak identity (Canvas IdentityConfig) that nobody asked for.
+# a design note:172-174 named this rebind as the final step; the canary proved out live
+# on 2026-09-02 (12e66eb6) and the rebind was never committed.
+#
+# What this hook does per request (authz-gateway/app.py:146-190): dispatch on
+# credential SHAPE -- three-segment Bearer = Keycloak JWT (per-party identity);
+# any other Bearer = API-key bootstrap tier, validated by SHA-256 digest against
+# agw-apikeys by the doorman ITSELF (W4-D), mapped to the single low-privilege
+# ServiceIdentity::"bootstrap-key"; AWS4-HMAC = SigV4. Then Cedar via the PDP.
+# The asset comes from the body (llm: model alias) or the path (mcp: /mcp/<alias>).
+#
+# Consequences of promotion, deliberately accepted:
+#   - agentgatewaypolicy-auth-ratelimit.yaml no longer carries
+#     apiKeyAuthentication on `llm`: the gateway's own key check CONSUMED the
+#     Authorization header before this hook saw it (the W4-D live finding), so
+#     the two cannot coexist. Rate limiting stays there.
+#   - FailClosed: if modaas-authz is down, every call refuses. That is the
+#     truthfulness invariant (a design note), not a bug. modaas-authz runs 2 replicas.
+#   - The doorman needs RBAC to read agw-apikeys -- added to the chart in
+#     templates/rbac/authz-apikey-store.yaml. It was missing; on a fresh
+#     cluster `kubectl auth can-i` said no, and this hook would have refused
+#     everything with key-store-unavailable.
+#
+# Lives in agentgateway-system (not modaas-system, where the authz Deployment
+# runs) because targetRefs requires same-namespace co-location with the Gateway.
+#
+# ---------------------------------------------------------------------------
+# GATEWAY-WIDE, 2026-09-26 (lane P). The enumerated `sectionName: llm` +
+# `sectionName: http` above was correct for the two listeners that existed when
+# a hardening note landed and WRONG the moment `llm-tls` (:8443) was added by W4-A: that
+# listener served with no identity hook at all, and it is not dormant --
+# operators/shared/agentgateway_route.py `_parent_refs()` defaults to
+# ["llm", "llm-tls"], so every governed ModelConfig already publishes an
+# AgentgatewayModel attached to it. The failure was structural, not an
+# oversight: an enumerated list has to be revisited every time the Gateway
+# grows, and nothing forced that.
+#
+# So the list is gone. One targetRef, no sectionName, which upstream defines as
+# "Applies to all listeners on the targeted Gateway"
+# (docs/kubernetes/latest/documentation/about/policies/target-merge.md). A
+# fourth listener is enforced the moment it is declared.
+#
+# Why this is schema-valid and safe to merge with the listener-scoped rate
+# limits:
+#   - `sectionName` is optional on a targetRef: the item's `required` list is
+#     [group, kind, name] only (docs/analysis/agentgateway-1.5/
+#     crds-1.4.1.yaml:27622-27625, the rendered 1.4.1 CRD). No CEL rule on
+#     AgentgatewayPolicy requires a sectionName for a `traffic` policy; the only
+#     targetRef constraints for `traffic` are the allowed kinds
+#     (crds-1.4.1.yaml:30990-30996).
+#   - Precedence is `Gateway < Listener` with a FIELD-LEVEL shallow merge, so
+#     this policy's `extAuth` and `modaas-llm-auth`'s listener-scoped
+#     `rateLimit` both apply -- different fields, union, no override
+#     (target-merge.md).
+#   - The same page warns that two policies setting the SAME field at the SAME
+#     level tie and one is silently dropped. Nothing else in this directory
+#     sets `traffic.extAuth` or `traffic.transformation`, and
+#     tests/test_agentgateway_perimeter_manifests.py
+#     ::test_no_duplicate_field_at_same_target_level keeps it that way.
+#
+# MERGE NOTE. The `allowedRequestHeaders` traceparent/baggage entries, the
+# `responseMetadata` block, the `transformation` block, and the comments that
+# explain them are lane C's work (branch draft/authz-trace-*, commit a0420ef4),
+# reproduced here byte-identically EXCEPT `transformation.response.set`. Lane C
+# wrote `set` as a map of header -> CEL; the 1.4.1 CRD defines it as an array
+# of {name, value}, and the API server refuses the map form (strict decoding,
+# live on event f2dbac00, 2026-09-26). This branch carries the array form, so
+# the two lanes now conflict on that block ON PURPOSE: whichever lands second
+# must keep the array. tests/test_agentgateway_manifest_schema.py fails on the
+# map form. Two further consequences, stated rather than silently patched:
+#   - Lane C's comment below says the policy "attaches to exactly the two
+#     listeners above". That was true of the enumerated targetRefs it was
+#     written against; with the Gateway-wide targetRef it now means ALL
+#     listeners. The invariant lane C relied on -- extAuth and the response
+#     transformation attach to the SAME set and cannot drift apart -- still
+#     holds, because they are still one policy object.
+#   - It also cites authz-gateway/hook_contract.py and
+#     authz-gateway/tests/test_hook_policy_contract.py, which lane C adds and
+#     this branch does not contain. Those references resolve on merge.
+#
+# APPLIED LIVE 2026-09-26 20:55Z on Workshop Studio event f2dbac00 (a vended
+# event account, not a core cluster): server dry-run accepted, both policies
+# Accepted and Attached. Before: anonymous POST to :8443 returned 200 and a
+# completion. After: anonymous 403 NoSigV4Credential, unknown key 403
+# SigV4UnknownPrincipal, valid key 200 with x-modaas-action-id; :8081
+# unchanged; :8080 anonymous 403. The probes sent no traceparent, so no
+# x-modaas-trace-id is the designed outcome (no trace id is ever minted).
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: modaas-authz
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: modaas-agw
+  traffic:
+    extAuth:
+      backendRef:
+        kind: Service
+        name: modaas-authz
+        namespace: modaas-system
+        port: 8080
+      failureMode: FailClosed
+      forwardBody:
+        maxSize: 256Ki
+      http:
+        # This list REPLACES the hook's default rather than adding to it
+        # (ext_authz.rs:780-784 at the pinned commit is an if/else), so every
+        # header authz-gateway reads is withheld unless it is named here. The
+        # reason each one is load-bearing -- and the headers that must NEVER
+        # appear here (x-modaas-asset, x-modaas-policy-id, host) -- are declared
+        # once in authz-gateway/hook_contract.py and checked by
+        # authz-gateway/tests/test_hook_policy_contract.py + loop/verify/G60.sh.
+        #
+        # traceparent/baggage added 2026-09-26 (P1-5, a design note point 2): app.py:135
+        # has read both since T2, this list named neither, so tracectx.resolve()
+        # always saw None, every PDP decision logged `trace_id=-`, and the
+        # evidence chain STATUS.md called live could not be joined to any run.
+        allowedRequestHeaders:
+          - authorization
+          - x-amz-date
+          - x-amz-content-sha256
+          - x-amz-security-token
+          - traceparent
+          - baggage
+        # a design note point 2, the return half. On THIS protocol an ALLOW response's
+        # headers reach the BACKEND and never the client: ext_authz.rs:835-873
+        # copies `allowedResponseHeaders` into req.headers_mut() and then returns
+        # PolicyResponse::default(), whose response_headers is None. Only the
+        # gRPC protocol has a client-facing field (OkHttpResponse.
+        # response_headers_to_add, ext_authz.rs:616-633).
+        #
+        # So the route to the caller is two hops: lift the ids out of the authz
+        # response into the `extauthz` CEL variable here, then have the response
+        # transformation below set the client-facing headers from it. A missing
+        # header fails CEL evaluation with NoSuchKey and the key is dropped
+        # (ext_authz.rs:851-858 filter_map) -- so a caller that sent no
+        # traceparent gets NO x-modaas-trace-id rather than a fabricated one,
+        # which is tracectx.py's never-mint-a-trace-id rule holding end to end.
+        responseMetadata:
+          traceId: 'response.headers["x-modaas-trace-id"]'
+          actionId: 'response.headers["x-modaas-action-id"]'
+          # The run id (2026-09-28). Also read by the access-log policy
+          # (agentgatewaypolicy-access-log.yaml) to put the run on the
+          # gateway's per-call token line.
+          correlationId: 'response.headers["x-modaas-correlation-id"]'
+    # The client-facing half. Same policy object, so it attaches to exactly the
+    # two listeners above and cannot drift onto a different set. Response-phase
+    # CEL reads `extauthz` off the request snapshot (cel/types.rs:816 populates
+    # it; :572 binds it; cel/mod.rs:228 is why referencing it triggers the
+    # snapshot at all), so the ids the hook lifted above are in scope here.
+    transformation:
+      response:
+        # 1.4.1 CRD: `set` is an ARRAY of {name, value}, not a map. The map
+        # form was refused live by the API server (strict decoding, event
+        # f2dbac00, 2026-09-26); tests/test_agentgateway_manifest_schema.py
+        # now validates every manifest here against the pinned CRD render.
+        set:
+          - name: x-modaas-trace-id
+            value: 'extauthz.traceId'
+          - name: x-modaas-action-id
+            value: 'extauthz.actionId'
+          - name: x-modaas-correlation-id
+            value: 'extauthz.correlationId'

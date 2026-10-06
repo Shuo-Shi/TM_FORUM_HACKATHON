@@ -1,0 +1,23 @@
+[
+  {
+    "site_id": "SITE-DEN-12",
+    "twin_answer": "resolve",
+    "agent_answer": "resolve",
+    "run_id": "fault-1791218704-2f67fd",
+    "disagree": false
+  },
+  {
+    "site_id": "SITE-DEN-09",
+    "twin_answer": "no-action",
+    "agent_answer": null,
+    "run_id": null,
+    "disagree": false
+  },
+  {
+    "site_id": "SITE-PHX-04",
+    "twin_answer": "escalate",
+    "agent_answer": "escalate",
+    "run_id": "fault-1791141414-f06063",
+    "disagree": false
+  }
+]

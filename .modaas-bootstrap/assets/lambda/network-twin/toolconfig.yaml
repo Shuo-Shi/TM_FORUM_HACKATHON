@@ -1,0 +1,53 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  name: network-twin
+  namespace: components
+  annotations:
+    # Platform-declared at install: approve in the same apply so the CR never
+    # enters Reviewing. Annotating after apply raced the creation reconcile
+    # (E4 2026-10-03: 2/8 tools parked, Provisioned never surfaced).
+    modaas.tmforum.org/approver: system-admin
+    modaas.tmforum.org/approval-attestation: Approved by the workshop platform at install
+spec:
+  toolName: network-twin
+  provider: agentCoreGateway
+  description: "Digital twin for network sites: predict RSRP and signal quality"
+  agentCoreGateway:
+    gatewayIdentifier: "${MODAAS_GATEWAY_ID}"
+    # The Gateway invokes the Lambda with its own service role (GATEWAY_IAM_ROLE);
+    # the Lambda ARN is the target. Both substituted by bootstrap step 14.
+    credentialProviderType: GATEWAY_IAM_ROLE
+    mcpServer:
+      endpoint: "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:team-${TEAM}-network-twin"
+    tools:
+      - name: predict_rsrp
+        description: "Predict signal quality (RSRP) and return telemetry for a site"
+        inputSchema:
+          type: object
+          properties:
+            site:
+              type: string
+              description: "Site identifier, e.g. SITE-DEN-12"
+          required: [site]
+  governance:
+    approval: {required: true, requiredApprovals: 1}
+  access:
+    # Canonical shape (same as the other shipped tools): permit unless the
+    # request names a tool outside the allowlist. MCP initialize/tools/list
+    # carry no toolName and must pass; a `when { context has toolName ... }`
+    # form denies the handshake itself (E7 2026-10-04: every call 403 at
+    # initialize). Tool names carry the Gateway target prefix <alias>___<tool>
+    # (event 486b9241: bare names never match).
+    cedarPolicy: |
+      permit(
+        principal,
+        action == Action::"invoke",
+        resource
+      ) unless {
+        context has toolName && !["network-twin___predict_rsrp"].contains(context.toolName)
+      } unless {
+        resource has dataClassification && resource.dataClassification == "restricted"
+      };

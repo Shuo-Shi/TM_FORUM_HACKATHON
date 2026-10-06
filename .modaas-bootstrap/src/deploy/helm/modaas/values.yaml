@@ -1,0 +1,488 @@
+# =============================================================================
+# MoDaaS Helm chart values (chart 0.1.0)
+#
+# Safe defaults — no IRSA, no public ingress, JWT enforcement ON, samples off,
+# NetworkPolicy off, ServiceMonitor off. Override per environment via:
+#   - values-dev.yaml    (kind/minikube/localstack)
+#   - values-<cluster>.yaml  (live <cluster> cluster; carries a real account
+#                         ID by design -- NOT for distribution)
+#   - values-prod.yaml   (customer template; placeholders enforced via schema)
+#
+# Plan reference: docs/superpowers/plans/2026-05-30-helm-chart-packaging.md §2
+# =============================================================================
+
+global:
+  namespace: modaas-system
+  componentNamespace: components
+  canvasNamespace: canvas-system
+  aws:
+    accountId: ""
+    # REQUIRED — no default. This value feeds the region env of all three
+    # operators and the authz-gateway's AWS_REGION. It defaulted to us-west-2
+    # (dev-cluster residue) until 2026-09-23, which silently pointed every
+    # consumer cross-region on any non-us-west-2 install; the visible symptom
+    # was only the NOTES banner (a hardening note #7b). Installs must set it:
+    #   --set-string global.aws.region=$REGION
+    region: ""
+    profile: ""
+
+namespaces:
+  create: true
+
+# -----------------------------------------------------------------------------
+# Reconciler operators (3x kopf-based controllers)
+# -----------------------------------------------------------------------------
+operators:
+  model:
+    enabled: true
+    name: aws-model-operator
+    image:
+      registry: public.ecr.aws/modaas
+      repository: aws-model-operator
+      tag: ""
+      pullPolicy: IfNotPresent
+    replicas: 1
+    irsaRoleArn: ""
+    env: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    peering:
+      enabled: true
+      name: modaas-model
+    watchNamespaces: []
+    registryMode: real
+    logging: "20"
+    # D-8 (optional): IAM role whose Bedrock-invoke permission the operator
+    # keeps pinned to the APPROVED models. Empty = feature off; the operator
+    # writes no IAM policy. Set to the role your gateway assumes, e.g.
+    # "<cluster>-agentgateway-bedrock". Requires iam:GetRolePolicy and
+    # iam:PutRolePolicy scoped to that role.
+    iamAllowlistRole: ""
+
+  tool:
+    enabled: true
+    name: aws-tool-operator
+    image:
+      registry: public.ecr.aws/modaas
+      repository: aws-tool-operator
+      tag: ""
+      pullPolicy: IfNotPresent
+    replicas: 1
+    irsaRoleArn: ""
+    env: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    peering:
+      enabled: true
+      name: modaas-tool
+    watchNamespaces: []
+    registryMode: real
+    logging: "20"
+
+  agent:
+    enabled: true
+    name: aws-agent-operator
+    image:
+      registry: public.ecr.aws/modaas
+      repository: aws-agent-operator
+      tag: ""
+      pullPolicy: IfNotPresent
+    replicas: 1
+    irsaRoleArn: ""
+    # Execution role every MoDaaS-MANAGED AgentCore runtime assumes (owner
+    # decision 2026-09-26, a design note Q1). Set from the `AgentCoreRuntimeRoleArn`
+    # output of static/cfn/01-eks-cluster.yaml — "Least-privilege execution role
+    # for AgentCore Runtime agents (no direct Bedrock or AgentCore Gateway
+    # access)". Reaches the operator as MODAAS_AGENTCORE_RUNTIME_ROLE_ARN.
+    #
+    # Empty by default and NOT `required` like global.aws.region: a cluster
+    # running only kubernetesPod agents has no AgentCore runtime to host, and
+    # failing `helm install` for it would be wrong. The fail-closed point is the
+    # reconcile — a managed AgentConfig parks in Failed with
+    # PlatformExecutionRoleUnset naming this value. A baked-in default would be
+    # some other account's role.
+    agentCoreRuntimeRoleArn: ""
+    # How an AgentCore Runtime gets its perimeter credential. AgentCore's
+    # environmentVariables holds literals only, so the pod path's secretKeyRef
+    # cannot carry it. "" (default): none, and the agent is refused 403 with a
+    # PerimeterReachable=False condition saying why. "sharedKey": the operator
+    # reads gatewayCredential.secretName in the component namespace and passes
+    # the value as a literal (one key for every agent, visible in the runtime's
+    # configuration) -- eval/workshop installs only. Granting it adds a Role
+    # that can read that ONE Secret, nothing else.
+    agentCoreGatewayCredential: ""
+    env: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    peering:
+      enabled: true
+      name: modaas-agent
+    watchNamespaces: []
+    registryMode: real
+    logging: "20"
+    keycloak:
+      # Live Canvas IdP: canvas-keycloak (ns canvas), ctx /auth, realm odari.
+      # (Was the retired canvas-identity orphan + dead `modaas` realm — see a design note.)
+      adminUrl: http://canvas-keycloak.canvas.svc.cluster.local:8083/auth
+      realm: odari
+      adminUserSecretRef:
+        name: modaas-keycloak-admin
+        userKey: username
+        passwordKey: password
+
+  # a design note §"Operator scope": the sibling operator that takes provider=
+  # kubernetesPod off aws-agent-operator. OFF BY DEFAULT and it must stay off
+  # until the migration runs, because while the a design note graft is still in
+  # aws-agent-operator BOTH operators would provision the same
+  # agent-<name> Deployment. Enabling it is step 1 of the migration:
+  #   1. --set operators.k8sAgent.enabled=true
+  #   2. confirm it adopts existing pod agents WITHOUT restarting them
+  #      (status.kubernetesPod.adoptedFrom=aws-agent-operator, pods not rolled)
+  #   3. remove the graft from aws-agent-operator (GRAFT-INVENTORY.md)
+  # Note: components/modaas-agent-default stays rendered by
+  # templates/rbac/agent-operator-kubernetespod.yaml until step 3. Rendering it
+  # from both files would fail `helm install` 100% on a fresh cluster with
+  # `serviceaccounts "modaas-agent-default" already exists` (<reviewer>, 2026-09-22).
+  k8sAgent:
+    enabled: false
+    name: k8s-agent-operator
+    image:
+      registry: public.ecr.aws/modaas
+      repository: k8s-agent-operator
+      tag: ""
+      pullPolicy: IfNotPresent
+    replicas: 1
+    # No irsaRoleArn: this operator makes no AWS call (see its requirements.txt).
+    env: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+    peering:
+      enabled: true
+      # Distinct from modaas-agent so the two agent operators do not contend
+      # for one kopf peering lock.
+      name: modaas-k8s-agent
+    watchNamespaces: []
+    registryMode: real
+    logging: "20"
+    # The namespace the perimeter (agentgateway) runs in. The per-agent
+    # NetworkPolicy allows egress here and to DNS, and nowhere else.
+    gatewayNamespace: agentgateway-system
+    # Set ONLY when the component namespace is sidecar-injected. When a sidecar
+    # is injected and istiod is NOT reachable, no new pod ever becomes Ready:
+    # istio-proxy cannot sign its CSR (measured 2026-09-08). When no sidecar is
+    # injected, leaving this empty keeps the policy at its tightest.
+    istiodNamespace: ""
+    networkPolicy:
+      # There is deliberately NO chart-level off switch for the per-agent egress
+      # policy. A cluster-wide toggle would disable a security control for every
+      # governed asset from one line nobody reviews; opting out is a per-asset,
+      # auditable decision (spec.kubernetesPod.networkPolicy: off), which lands
+      # in that asset's status.kubernetesPod.withholdingFindings.
+      #
+      # true => refuse to approve an asset when no NetworkPolicy-enforcing
+      # controller can be recognised in the cluster. Default false reports
+      # capabilityWithheld=false + an unverified leg instead, because refusing on
+      # an unrecognised-but-working CNI would brick a correct cluster on a
+      # detection gap. See K8S-OPERATOR.md §4c.
+      requireEnforcement: false
+
+# -----------------------------------------------------------------------------
+# a design note Canvas-First Integration (Component owner refs, IdentityConfig,
+# DependentAPI, PublishedNotification)
+# -----------------------------------------------------------------------------
+canvasIntegration:
+  ownerReferences: true
+  identityConfig: true
+  dependentApi: true
+  publishedNotification: true
+  auditLedger:
+    enabled: true
+    sinkConfigMapRef: modaas-audit-sink
+
+# -----------------------------------------------------------------------------
+# Registry CR provisioning (a design note first-class primitive)
+# -----------------------------------------------------------------------------
+registry:
+  installDefault: false
+  defaultBacking: agentcore
+  defaultName: modaas-canvas-registry
+  agentCoreRegistryId: ""
+  tmf639Endpoint: ""
+  region: us-west-2
+
+# -----------------------------------------------------------------------------
+# Bedrock + AgentCore Gateway runtime configuration
+# -----------------------------------------------------------------------------
+bedrock:
+  defaultRegion: us-west-2
+  guardrailDefaultMode: enforce
+
+agentCoreGateway:
+  gatewayId: ""
+  region: us-west-2
+
+# -----------------------------------------------------------------------------
+# RBAC + ServiceAccount knobs
+# -----------------------------------------------------------------------------
+rbac:
+  create: true
+  modaasSystem: true
+  components: true
+  canvasSystem: true
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+# -----------------------------------------------------------------------------
+# NetworkPolicy (off by default — enable per environment)
+# -----------------------------------------------------------------------------
+networkPolicy:
+  enabled: false
+  allowFrom: []
+  awsEndpoints:
+    bedrockCidrs: []
+    agentCoreCidrs: []
+    iamCidrs: []
+
+# -----------------------------------------------------------------------------
+# OpenTelemetry Collector — single observability spine (G14).
+# Enable this ONLY when Canvas does NOT provide its own collector.
+# -----------------------------------------------------------------------------
+otelCollector:
+  enabled: false
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.108.0"
+  # IRSA for the collector's ServiceAccount. Required when
+  # `evidence.exporter: awscloudwatchlogs` -- the exporter needs
+  # logs:CreateLogGroup / CreateLogStream / PutLogEvents and (when retention is
+  # set) logs:PutRetentionPolicy. Left empty the collector falls back to the node
+  # role, which is how the a design note DaemonSet reached CloudWatch; a dedicated role
+  # is preferred because the audit sink is the one log group that must not be
+  # writable by every workload on the node.
+  irsaRoleArn: ""
+
+  # ---------------------------------------------------------------------------
+  # The MoDaaS evidence pipeline (a design note point 5). Its OWN flag, separate from
+  # the collector's: a cluster can want traces and metrics without standing up
+  # an audit sink, and an audit pipeline exporting to `debug` would claim
+  # evidence the platform is not keeping.
+  #
+  # Turning this on also points authz-gateway's emitter at the collector
+  # (templates/authz-gateway/deployment.yaml). Leaving it off leaves the
+  # emitter's endpoint empty, which is a COUNTED no-op rather than a queue that
+  # fills behind a Service that does not exist.
+  # ---------------------------------------------------------------------------
+  evidence:
+    enabled: false
+
+    # Which sink. `debug` is the default so an install claims nothing.
+    # `awscloudwatchlogs` is the AWS reference backing (a design note's backing
+    # pattern); other sinks (Loki, Elastic, Splunk, Azure Monitor) are community
+    # backings per a design note and add their own exporter name here.
+    exporter: debug
+
+    cloudWatchLogs:
+      # REQUIRED when exporter is awscloudwatchlogs: the exporter has no default
+      # and would create a log group named "" on first export.
+      logGroupName: ""
+      # A literal name. The collector version pinned here (0.108.0) does NOT
+      # resolve placeholders: "{ServiceName}" produced a stream literally named
+      # `{ServiceName}` (measured 2026-09-28). Every writer shares this stream;
+      # records stay separable by their `service.name` resource attribute and
+      # the k8s stamp, and evidence-service reads the whole group anyway.
+      logStreamName: "modaas-evidence"
+      # The exporter's own default is "Never Expire". An audit sink with
+      # unbounded retention is a cost and a data-minimisation problem nobody
+      # chose. Must be one of CloudWatch's accepted day counts (checked at
+      # template time) and applies ONLY to a group the exporter itself creates.
+      retentionInDays: 365
+      # Cannot be honoured by the collector: the awscloudwatchlogs exporter has
+      # no KMS option. Setting it renders a `modaas-evidence-sink-preconditions`
+      # ConfigMap naming the out-of-band `aws logs create-log-group
+      # --kms-key-id` + `put-retention-policy` steps, rather than accepting a
+      # value that would leave an operator believing the sink is encrypted with
+      # their key when it is not.
+      kmsKeyArn: ""
+
+# -----------------------------------------------------------------------------
+# evidence-service (a design note point 5) — the approver-facing read/write surface over
+# the evidence chain, fronted by agentgateway so every read and write crosses the
+# authz hook. Replaces the workshop's homegrown `audit-store`.
+#
+# Off by default: it is only useful once an evidence pipeline exists
+# (otelCollector.evidence.enabled), and a service answering 503 on every read
+# would read as an outage rather than as "not configured here".
+# -----------------------------------------------------------------------------
+evidenceService:
+  enabled: false
+  image:
+    registry: ""          # e.g. <account>.dkr.ecr.us-west-2.amazonaws.com
+    repository: modaas/evidence-service
+    tag: latest
+  # IRSA for the CloudWatch Logs READ backing (logs:FilterLogEvents on the
+  # evidence log group). READ-only by design: this service never writes to the
+  # sink -- writes go through the collector so the k8sattributes stamp applies --
+  # so a write permission here would be a capability nothing uses and a path
+  # around the stamp.
+  irsaRoleArn: ""
+  # Where the route attaches. The `http` listener, not `llm`: `llm` allows only
+  # AgentgatewayModel routes, so an HTTPRoute there reports attachedRoutes 0 and
+  # answers 404 (deploy/agentgateway/gateway-modaas-agw.yaml).
+  gateway:
+    name: modaas-agw
+    namespace: agentgateway-system
+    listener: http
+
+# -----------------------------------------------------------------------------
+# Prometheus ServiceMonitor (off by default — enable when Prom installed)
+# -----------------------------------------------------------------------------
+serviceMonitor:
+  enabled: false
+  namespace: ""
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+
+# -----------------------------------------------------------------------------
+# helm test hooks
+# -----------------------------------------------------------------------------
+test:
+  enabled: true
+  endToEnd: false
+  image:
+    registry: docker.io
+    repository: curlimages/curl
+    tag: "8.7.1"
+
+# -----------------------------------------------------------------------------
+# Common labels merged onto every rendered resource.
+# -----------------------------------------------------------------------------
+commonLabels:
+  app.kubernetes.io/part-of: modaas-canvas
+  modaas.tmforum.org/version: "v1beta1"
+
+# -----------------------------------------------------------------------------
+# authz-gateway (a design note/086/088) — the ext_authz backend behind agentgateway's
+# `llm` listener. Identity verification + Cedar PDP query translation, in the
+# synchronous path of every governed call. Lives in modaas-system (co-located
+# with the PDP it calls), NOT agentgateway-system.
+#
+# Only image/IRSA/namespace are overridable here. Replica count, resource
+# limits, timeouts, and autoscaling behavior are DERIVED constants checked by
+# loop/verify/G60.sh (see templates/authz-gateway/deployment.yaml inline
+# comments for the arithmetic) — they are intentionally NOT exposed as values
+# so an override can't silently break that invariant.
+# -----------------------------------------------------------------------------
+authzGateway:
+  enabled: false          # opt-in; the agentgateway transition track
+  image:
+    registry: public.ecr.aws/modaas
+    repository: authz-gateway
+    tag: "latest"
+  irsaRoleArn: ""          # required when enabled=true — sts:GetAccessKeyInfo only
+  # Whether an UNVERIFIED SigV4 header counts as identity. authz-gateway cannot
+  # verify a SigV4 signature (the signing key derives from the caller's secret),
+  # so neither value is "verify":
+  #   account  (default, TODAY'S BEHAVIOUR) shape + freshness + STS account
+  #            lookup. A real-format access key id with 64 hex zeros where the
+  #            signature goes is accepted and reported as `account-resolved`.
+  #   reject   refuse every SigV4 caller at identity with
+  #            SigV4UnverifiedIdentityRejected (a design note point 3). Narrows ONE
+  #            class: Keycloak JWT and API-key callers are unaffected.
+  # Flipping to `reject` refuses every SigV4 caller, boto3 agents included —
+  # inventory them before setting it. Anything other than these two values
+  # behaves as `reject`; see authz-gateway/config.py.
+  sigv4IdentityMode: "account"
+
+# Cedar PDP (a design note) — the decision point the tool plane's agentPolicy points at.
+pdp:
+  enabled: false          # opt-in; ToolConfigs without agentPolicy do not need it
+  replicas: 2             # on the authz path: never a single point of failure
+  image:
+    # Deliberately a loud placeholder, not a real account and not "":
+    # _helpers.tpl resolves images via `$img.registry | default
+    # "public.ecr.aws/modaas"`, and Sprig's default() treats an EMPTY STRING
+    # as unset -- so "" would silently fall back to a public registry that
+    # has ZERO published MoDaaS images. A real account ID here is worse
+    # still: it points every default install at a registry only that one
+    # account can pull from. Override per environment (see the overlay list
+    # at the top of this file).
+    registry: REPLACE_ME_ECR_REGISTRY
+    repository: modaas/pdp
+    digest: ""
+
+# agentgateway subcharts (OCI, Linux Foundation). Default OFF -- the documented
+# path installs them as standalone releases first. Enable only for all-in-one.
+agentgatewaySubchart:
+  enabled: false
+
+# Operator-programmed agentgateway routes (AgentgatewayModel per approved CR).
+# ON by default: agentgateway is the sole dataplane, so an approved model that
+# programs no route would be served by nothing.
+# W4-C: project ModelConfig.spec.access.allowedConsumers as Cedar permits into
+# the PDP. Required for the identity hook (a design note, promoted a hardening note) to permit any
+# model call at all. A model with no allowedConsumers serves nobody -- by design.
+modelGrants:
+  project: true
+
+agentgatewayRoutes:
+  enabled: true
+  namespace: agentgateway-system
+  gateway: modaas-agw
+
+# a hardening note — credential governed agents present to the perimeter.
+#
+# Since a hardening note put the a design note identity hook on both agentgateway listeners, an
+# agent that receives only a URL from the operator is refused 403 by its own
+# perimeter. The operator injects this Secret's value into agent Pods as
+# OPENAI_API_KEY and AGENTCORE_GATEWAY_MCP_TOKEN via secretKeyRef.
+#
+# bootstrapKey is EMPTY by default, so this chart creates no Secret. The operator
+# still references secretName with `optional: true`, which is what makes a
+# production install work: create the Secret out of band (External Secrets,
+# Canvas SecretsManagement) with create=false and the reference resolves. When
+# the Secret genuinely does not exist, the env var is simply unset, the Pod
+# starts normally, and the agent is refused 403 by the perimeter -- the
+# pre-a hardening note behaviour, reached honestly rather than by a wedged Pod.
+#
+# Set bootstrapKey for eval/workshop installs only; the value must match an entry
+# in the perimeter key store (agentgateway-system/agw-apikeys).
+gatewayCredential:
+  create: true
+  secretName: modaas-gateway-key
+  secretKey: apiKey
+  bootstrapKey: ""

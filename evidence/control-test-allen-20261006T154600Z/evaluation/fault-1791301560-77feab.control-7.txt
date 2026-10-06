@@ -1,0 +1,26 @@
+CONTROL_ID        : 7
+CONTROL_NAME      : Automatic event recording
+RUN_ID            : fault-1791301560-77feab
+
+THRESHOLD_VERSION : AIA-LOG-001-v2
+EFFECTIVE_DATE    : 2026-10-05
+OWNER             : VelocityX
+COVERAGE_LIMIT    : 100
+GAP_LIMIT_MS      : 2500
+GAP_ALLOWANCE_PCT : 10
+
+VERDICT           : BREACH
+MEASURED_VALUE    : {'coverage_percent': 100.0, 'violating_gap_percent': 29.41}
+COVERAGE_PERCENT  : 100.0
+TOTAL_RECORDS     : 18
+VALID_RECORDS     : 18
+MISSING_RECORDS   : 0
+TIMESTAMP_COUNT   : 18
+TOTAL_GAPS        : 17
+VIOLATING_GAPS    : 5
+MAX_GAP_MS        : 27126.569
+VIOLATING_GAP_PCT : 29.41
+TRACE_COUNT       : 1
+EVIDENCE_IDS      : 496721a6-ca2d-4f44-87b2-48f0ccfa6cba, 7e35348c-25f6-4e32-9177-562f540c6f3a, 3500ecf6-4381-480c-a71d-7a1a97bce7fe, 9e9fb6ad-1739-43c1-96f5-d8edb7dfe1e7, 809fe3ae-8f05-4437-af71-a62255781916, 5ecb1184-8925-46f6-bf91-c884350529c2, f7a4640d-82f6-4901-914b-b662826fea28, f3eb1029-4899-4696-ab7e-c3affb5779eb, 667f80d3-42f7-48e3-b8af-022e40f57f3a, 5b4773c3-9bc1-48ad-9ccb-853d6f80e55f, dacade12-8da1-445e-81c7-6bdb0cbf76ac, 92751b58-8c00-4c92-87e1-e570afad95a2, cad385fb-6cca-470e-8fdd-8b4df5f5340d, 0f309026-f636-4733-87c8-87b908e6e054, 38ac910a-1be1-43fa-b4c2-165cac92f069, 440a9b20-7553-4e4d-b2b9-86c6879f698a, 633de4ef-7149-41c6-ab64-e2877e09bbf1, 74e0da41-a1eb-4dbb-a3a2-7b144e4be73a
+VERDICT_FILE      : /home/ec2-user/evidence/verdicts/v-7-fault-1791301560-77feab-9cdc2d430d58.json
+------------------------------------------------------------------------------

@@ -1,0 +1,115 @@
+{{- if .Values.canvasIntegration.ownerReferences }}
+# -----------------------------------------------------------------------------
+# Pre-install / pre-upgrade Canvas-presence check.
+# Aborts the install if ODA Canvas core CRDs (Component, DependentAPI,
+# IdentityConfig, PublishedNotification) are not present. Enables
+# a design note Canvas-First integration to render safely without runtime KeyErrors
+# when the operator goes to emit Canvas resources.
+#
+# Hook weight -10 runs before the namespace hook (-5) so we fail before
+# allocating namespaces.
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-canvas-precheck
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: precheck
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-11"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-canvas-precheck
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: precheck
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-11"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-canvas-precheck
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: precheck
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-11"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-canvas-precheck
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-canvas-precheck
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-canvas-precheck
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "modaas.labels" . | nindent 4 }}
+    app.kubernetes.io/component: precheck
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: canvas-precheck
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ .Release.Name }}-canvas-precheck
+      containers:
+        - name: precheck
+          image: bitnamilegacy/kubectl:1.32
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              echo "Canvas pre-flight: verifying ODA Canvas CRDs..."
+              required="components.oda.tmforum.org dependentapis.oda.tmforum.org publishednotifications.oda.tmforum.org identityconfigs.oda.tmforum.org"
+              missing=""
+              for crd in $required; do
+                if ! kubectl get crd "$crd" >/dev/null 2>&1; then
+                  missing="$missing $crd"
+                fi
+              done
+              if [ -n "$missing" ]; then
+                echo ""
+                echo "ERROR: Required Canvas CRDs missing:$missing"
+                echo "Install ODA Canvas core (https://github.com/tmforum-oda/oda-canvas)"
+                echo "before installing this chart, or set"
+                echo "  --set canvasIntegration.ownerReferences=false"
+                echo "to skip the precheck (warning: cascade-delete won't propagate)."
+                exit 1
+              fi
+              echo "OK — Canvas CRDs present."
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+{{- end }}

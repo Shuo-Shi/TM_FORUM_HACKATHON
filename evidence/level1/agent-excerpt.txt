@@ -1,0 +1,147 @@
+]633;E;sed -n '30,60p' /tmp/reference-agent/agent.py;ee1c1d47-fb30-48ea-9936-e6de722b662d]633;CTOOL_MCP_URL = os.environ.get("TOOL_MCP_URL") or os.environ.get("AGENTCORE_GATEWAY_MCP_URL", "")
+TOOL_MCP_ALIAS = os.environ.get("TOOL_MCP_ALIAS", "")
+
+PROMPTS = {
+    "customer": (
+        "/no_think You are a telecom Customer Experience agent. "
+        "Use your customer-records tool to look up impacted customers for the fault site, "
+        "then summarize in 3 short bullet points: which customers are impacted, how, "
+        "and what to tell them. Be factual and brief."
+    ),
+    "it": (
+        "/no_think You are a telecom IT Resolution agent. "
+        "Use your runbook-lookup tool to find the incident and runbook, "
+        "then state in 3 short bullet points: incident disposition, "
+        "the action you take per the runbook, and what you need from the "
+        "network team. Be factual and brief. "
+        "If you receive a negotiation request, evaluate the proposal against "
+        "the runbook and state whether you agree or disagree."
+    ),
+    "network": (
+        "/no_think You are a telecom Network Resolution agent. "
+        "Use your network-twin tool to predict signal quality (predict_rsrp) "
+        "for the fault site, then state in 3 short bullet points: the probable "
+        "root cause, your proposed resolution, and the risk of the change. "
+        "Be factual and brief."
+    ),
+}
+
+_TRACEPARENT_RE = re.compile(r"^00-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$")
+
+
+-----
+        return f"step {step}: {exc}"
+
+
+def classify_disposition(text):
+    t = re.sub(r"[^a-z0-9]+", " ", (text or "").lower())
+
+    def has(*stems):
+        return any(re.search(r"\b" + p, t) for p in stems)
+
+    escalate = has(
+        r"escalat", r"human approval", r"approval required",
+        r"maintenance freeze", r"change freeze", r"cannot proceed",
+    )
+    uncertain = has(
+        r"ambiguous", r"inconclusive", r"insufficient evidence",
+        r"unclear", r"need more",
+    )
+    resolved = has(
+        r"resolv", r"resolution", r"remediat", r"appl(?:y|ied)",
+        r"execut", r"failover", r"cutover", r"repair", r"replace",
+    )
+    if escalate:
+        return "escalate"
+    if uncertain:
+        return "gather-evidence"
+    if resolved:
+        return "auto-resolve"
+    return "undetermined"
+
+
+@app.entrypoint
+def invoke(payload):
+    inner = payload.get("input") if isinstance(payload.get("input"), dict) else payload
+
+    if isinstance(inner.get("negotiate"), dict):
+        return _handle_negotiate(inner["negotiate"])
+-----
+            cid, STEP_BASE + 2, "invocation",
+            f"trace_id={trace_id} governed call via alias {ALIAS}: http_status={status}",
+            trace_id=trace_id,
+        )
+    )
+
+    negotiation = None
+    if ROLE == "network" and disposition != "refused":
+        negotiation = {"position": "pending-live-negotiation"}
+
+    inspection = f"disposition={disposition}, decision={answer!r}"
+    if negotiation:
+        inspection += f" | negotiation_with_it={negotiation.get('position', 'n/a')}"
+    errors.append(
+        post_audit(cid, STEP_BASE + 3, "result-inspection", inspection, trace_id=trace_id)
+    )
+
+    out = {
+        "agent": NAME, "role": ROLE, "correlation_id": cid,
+        "answer": answer, "disposition": disposition,
+        "http_status": status, "trace_id": trace_id,
+        "evidence_errors": [e for e in errors if e],
+    }
+    if negotiation:
+        out["negotiation"] = negotiation
+    return out
+
+
+def _handle_negotiate(neg):
+    cid = neg.get("correlation_id", f"{NAME}-{uuid.uuid4().hex[:8]}")
+    proposal = neg.get("proposal", "")
+    _, trace_id = new_trace(neg.get("traceparent"))
+    post_audit(
+        cid, STEP_BASE + 2.5, "negotiation",
+        f"received network proposal ({len(proposal)} chars); "
+        "evaluating against open incident + runbook",
+        trace_id=trace_id,
+    )
+    position = (
+        "agree: protection-path switch is runbook-approved "
+        "(RB-EDGE-SLICE-DEGRADATION); schedule optic replacement in window"
+    )
+    return {"agent": NAME, "correlation_id": cid, "position": position}
+
+
+if __name__ == "__main__":
+    print(f"reference-agent starting: name={NAME} role={ROLE} model={ALIAS}", flush=True)
+    app.run(port=int(os.environ.get("PORT", "8080")))
+----- ENV
+23:NAME = os.environ.get("AGENT_NAME", "reference-agent")
+24:ROLE = os.environ.get("AGENT_ROLE", "customer")
+25:ALIAS = os.environ.get("MODEL_ALIAS", "nemotron-super-120b")
+26:STEP_BASE = int(os.environ.get("STEP_BASE", "0"))
+30:TOOL_MCP_URL = os.environ.get("TOOL_MCP_URL") or os.environ.get("AGENTCORE_GATEWAY_MCP_URL", "")
+31:TOOL_MCP_ALIAS = os.environ.get("TOOL_MCP_ALIAS", "")
+84:        "base_url": os.environ.get("OPENAI_BASE_URL", ""),
+85:        "api_key": os.environ.get("OPENAI_API_KEY", ""),
+111:        _headers = {"Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}"}
+152:        "X-Audit-Token": os.environ.get("AUDIT_WRITE_TOKEN", ""),
+157:                os.environ.get("AUDIT_URL", "") + "/records",
+317:    app.run(port=int(os.environ.get("PORT", "8080")))
+----- NETWORK AGENTCONFIG ENV
+  name: network-resolution-agent
+  namespace: components
+--
+    name: network-resolution-agent
+    uid: 7080fa9c-91b2-4147-a32c-0e6f1c5ae51d
+--
+  agentName: network-resolution-agent
+  awsAgentCore:
+--
+--
+      AGENT_NAME: network-resolution-agent
+      AGENT_ROLE: network
+--
+--
+    name: network-resolution-agent
+    namespace: components

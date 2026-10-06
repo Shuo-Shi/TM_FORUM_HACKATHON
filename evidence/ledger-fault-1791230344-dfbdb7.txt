@@ -1,0 +1,38 @@
+AUDIT TRAIL -- 12 records
+================================================================
+ 1. [2026-10-05T19:59:06Z] INTENT | actor=customer-experience-agent | step=1
+    correlation_id=fault-1791230344-dfbdb7
+    trace_id=fadb13fb76c9425fabc6d5f39ee0498e customer analysis via governed model 'nemotron-super-120b'; tool customer-records
+ 2. [2026-10-05T19:59:11Z] TOOL-INVOCATION | actor=customer-experience-agent | step=1.5
+    correlation_id=fault-1791230344-dfbdb7
+    actor=customer-experience-agent tool=customer-records correlation_id=fault-1791230344-dfbdb7 trace_id=fadb13fb76c9425fabc6d5f39ee0498e result_summary=- Impacted customers: Meridian Logistics (CUST-100
+ 3. [2026-10-05T19:59:11Z] INVOCATION | actor=customer-experience-agent | step=2
+    correlation_id=fault-1791230344-dfbdb7
+    trace_id=fadb13fb76c9425fabc6d5f39ee0498e governed call via alias nemotron-super-120b: http_status=200
+ 4. [2026-10-05T19:59:11Z] RESULT-INSPECTION | actor=customer-experience-agent | step=3
+    correlation_id=fault-1791230344-dfbdb7
+    disposition=undetermined, decision="- Impacted customers: Meridian Logistics (CUST-1001), Aurora Health Group (CUST-1002), Northwind Retail (CUST-2087), Summit Energy (CUST-4455), Pacific Transit Auth
+ 5. [2026-10-05T19:59:13Z] INTENT | actor=it-resolution-agent | step=4
+    correlation_id=fault-1791230344-dfbdb7
+    trace_id=00265f260fb94ed3878d5f0d99614b58 it analysis via governed model 'nemotron-nano-9b'; tool runbook-lookup
+ 6. [2026-10-05T19:59:35Z] TOOL-INVOCATION | actor=it-resolution-agent | step=4.5
+    correlation_id=fault-1791230344-dfbdb7
+    actor=it-resolution-agent tool=runbook-lookup correlation_id=fault-1791230344-dfbdb7 trace_id=00265f260fb94ed3878d5f0d99614b58 result_summary=- **Incident disposition**: Undetermined (investigation on
+ 7. [2026-10-05T19:59:35Z] INVOCATION | actor=it-resolution-agent | step=5
+    correlation_id=fault-1791230344-dfbdb7
+    trace_id=00265f260fb94ed3878d5f0d99614b58 governed call via alias nemotron-nano-9b: http_status=200
+ 8. [2026-10-05T19:59:35Z] RESULT-INSPECTION | actor=it-resolution-agent | step=6
+    correlation_id=fault-1791230344-dfbdb7
+    disposition=undetermined, decision='- **Incident disposition**: Undetermined (investigation ongoing for DU-DEN-12-A fault affecting 5G edge slice).  \n- **Action per runbook**: Use `runbook-lookup___l
+ 9. [2026-10-05T19:59:38Z] INTENT | actor=network-resolution-agent | step=7
+    correlation_id=fault-1791230344-dfbdb7
+    trace_id=1528f79f40554c01a730f4f38270cb0f network analysis via governed model 'nemotron-super-120b'; tool network-twin
+10. [2026-10-05T20:00:29Z] TOOL-INVOCATION | actor=network-resolution-agent | step=7.5
+    correlation_id=fault-1791230344-dfbdb7
+    actor=network-resolution-agent tool=network-twin correlation_id=fault-1791230344-dfbdb7 trace_id=1528f79f40554c01a730f4f38270cb0f result_summary=
+11. [2026-10-05T20:00:29Z] INVOCATION | actor=network-resolution-agent | step=8
+    correlation_id=fault-1791230344-dfbdb7
+    trace_id=1528f79f40554c01a730f4f38270cb0f governed call via alias nemotron-super-120b: http_status=200
+12. [2026-10-05T20:00:29Z] RESULT-INSPECTION | actor=network-resolution-agent | step=9
+    correlation_id=fault-1791230344-dfbdb7
+    disposition=undetermined, decision='' | negotiation_with_it=pending-live-negotiation

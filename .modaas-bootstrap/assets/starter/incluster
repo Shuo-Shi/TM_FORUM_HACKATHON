@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# incluster NAME [kubectl-run flags] -- COMMAND
+# Run COMMAND in a throwaway curl pod inside the cluster, wait for it to
+# finish, print its output once, delete the pod. Installed on the IDE PATH by
+# bootstrap so every module can call it from any terminal; Module 2 Step 7
+# shows the same function inline and explains why it exists (kubectl run
+# --rm -i attaches after start, so a short request can finish and print
+# nothing).
+set -u
+p=$1; shift
+kubectl delete pod "$p" -n default --ignore-not-found >/dev/null
+kubectl run "$p" --restart=Never --image=curlimages/curl:8.5.0 -n default "$@" >/dev/null || exit $?
+for _ in $(seq 300); do
+  case $(kubectl get pod "$p" -n default -o jsonpath='{.status.phase}') in Succeeded|Failed) break;; esac
+  sleep 1
+done
+kubectl logs "$p" -n default
+rc=$(kubectl get pod "$p" -n default -o jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}' 2>/dev/null)
+kubectl delete pod "$p" -n default --wait=false >/dev/null
+exit "${rc:-0}"

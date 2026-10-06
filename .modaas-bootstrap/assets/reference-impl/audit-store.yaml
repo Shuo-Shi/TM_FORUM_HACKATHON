@@ -1,0 +1,102 @@
+# Audit store -- the evidence ledger the reference agents write to.
+#
+# Apply this BEFORE running the reference scenario; run-reference.sh and the
+# /timeline endpoint both assume it is already up.
+#
+# Two properties are load-bearing and were both found the hard way on a live
+# cluster (2026-09-05):
+#   * strategy: Recreate -- the data PVC is RWO, so a RollingUpdate surge pod
+#     can never bind the volume and the rollout deadlocks.
+#   * AUDIT_WRITE_TOKEN -- the write gate. Without it the ledger accepts
+#     anonymous POSTs, and an audit trail anyone can write is not evidence.
+#     Create the secret in the same step you apply this file.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audit-store-data
+  namespace: components
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: gp3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: audit-store
+    modaas.tmforum.org/role: evidence-service
+  name: audit-store
+  namespace: components
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audit-store
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: 'false'
+      labels:
+        app: audit-store
+    spec:
+      containers:
+      - command:
+        - python3
+        - /app/store.py
+        image: public.ecr.aws/docker/library/python:3.12-slim
+        imagePullPolicy: IfNotPresent
+        name: store
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app
+          name: app
+        - mountPath: /data
+          name: data
+        env:
+        - name: AUDIT_WRITE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: audit-write-token
+              key: token
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: audit-store-app
+        name: app
+      - name: data
+        persistentVolumeClaim:
+          claimName: audit-store-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-store
+  namespace: components
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: audit-store

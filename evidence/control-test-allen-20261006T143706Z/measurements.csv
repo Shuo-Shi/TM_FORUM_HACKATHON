@@ -1,0 +1,7 @@
+scenario,iteration,run_id,trace_id,control_id,evaluator_exit,verdict,metric_name,measured_value,threshold_value,comparison,output_file
+S1-fronthaul-degradation,1,fault-1791297426-32a3ff,6296fba9f18b474995632fe07404c26c,7,1,BREACH,,{'coverage_percent':,,,/home/ec2-user/evidence/control-test-allen-20261006T143706Z/evaluation/fault-1791297426-32a3ff.control-7.txt
+S1-fronthaul-degradation,1,fault-1791297426-32a3ff,6296fba9f18b474995632fe07404c26c,9,1,BREACH,,2411.67,,,/home/ec2-user/evidence/control-test-allen-20261006T143706Z/evaluation/fault-1791297426-32a3ff.control-9.txt
+S1-fronthaul-degradation,1,fault-1791297426-32a3ff,6296fba9f18b474995632fe07404c26c,16,0,PASS,,25338,,,/home/ec2-user/evidence/control-test-allen-20261006T143706Z/evaluation/fault-1791297426-32a3ff.control-16.txt
+S2-transport-congestion,1,fault-1791297493-8dde89,7f87ccb9e64d472f91ba837902dc12fb,7,1,BREACH,,{'coverage_percent':,,,/home/ec2-user/evidence/control-test-allen-20261006T143706Z/evaluation/fault-1791297493-8dde89.control-7.txt
+S2-transport-congestion,1,fault-1791297493-8dde89,7f87ccb9e64d472f91ba837902dc12fb,9,0,PASS,,1105.26,,,/home/ec2-user/evidence/control-test-allen-20261006T143706Z/evaluation/fault-1791297493-8dde89.control-9.txt
+S2-transport-congestion,1,fault-1791297493-8dde89,7f87ccb9e64d472f91ba837902dc12fb,16,1,BREACH,,1317036,,,/home/ec2-user/evidence/control-test-allen-20261006T143706Z/evaluation/fault-1791297493-8dde89.control-16.txt

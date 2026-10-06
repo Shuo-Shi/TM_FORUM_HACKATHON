@@ -1,0 +1,115 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+#
+# Template new-tool.sh renders (substituting __TOOL_ALIAS__). Same shape as
+# static/crs/modaas-docs-toolconfig.yaml: a custom MCP tool fronted by the
+# perimeter, approval required, a Cedar policy scoped to this tool's own
+# action names.
+#
+# The `has` guards in cedarPolicy below are load-bearing, not decoration: in
+# Cedar, reading an attribute an entity lacks is an evaluation error, and the
+# doorman fails closed on errors. Without them, this policy would 403 every
+# call including the MCP initialize handshake the moment a caller or
+# resource lacks the attribute — see static/crs/modaas-docs-toolconfig.yaml's
+# own comment for the two ways this was found live.
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  name: __TOOL_ALIAS__
+  namespace: components
+spec:
+  toolName: __TOOL_ALIAS__
+  provider: custom
+  toolType: mcp
+  description: "__TOOL_DESCRIPTION__"
+  credentialProviderType: NONE
+  custom:
+    baseUrl: "http://__TOOL_ALIAS__-mcp.components.svc.cluster.local:8080"
+    protocol: mcp
+  governance:
+    approval:
+      required: true
+      requiredApprovals: 1
+    dataClassification: internal
+    owner: "REPLACE_WITH_YOUR_TEAM_NAME"
+  access:
+    cedarPolicy: |
+      permit(
+        principal,
+        action == Action::"invoke",
+        resource
+      ) unless {
+        context has toolName &&
+        !["EXAMPLE_TOOL"].contains(context.toolName)
+      } unless {
+        resource has dataClassification &&
+        resource.dataClassification == "restricted"
+      };
+---
+# OPTIONAL agentCoreGateway variant (new-tool.sh --agentcore-gateway).
+# Use this shape instead of the ToolConfig above when you want your tool
+# fronted by Amazon Bedrock AgentCore Gateway rather than the in-cluster
+# agentgateway MCP listener. This variant needs a target the Gateway can call
+# (a Lambda, or an HTTP target if your Gateway supports it in-region) — it
+# does NOT point at the in-cluster Service above.
+#
+# new-tool.sh extracts everything between the AGENTCORE-GATEWAY-YAML-BEGIN
+# and -END markers below verbatim (no comment-stripping needed): keep every
+# line in that block as plain, uncommented YAML.
+# AGENTCORE-GATEWAY-YAML-BEGIN
+apiVersion: oda.tmforum.org/v1beta1
+kind: ToolConfig
+metadata:
+  name: __TOOL_ALIAS__-agentcore
+  namespace: components
+spec:
+  toolName: __TOOL_ALIAS__-agentcore
+  provider: agentCoreGateway
+  toolType: mcp
+  description: "__TOOL_DESCRIPTION__ (via AgentCore Gateway)"
+  agentCoreGateway:
+    gatewayIdentifier: "${MODAAS_GATEWAY_ID}"
+    # The Gateway invokes your Lambda with its own service role.
+    credentialProviderType: GATEWAY_IAM_ROLE
+    mcpServer:
+      endpoint: "arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:__LAMBDA_FUNCTION__"
+    tools:
+    - name: __TOOL_ALIAS__
+      description: "__TOOL_DESCRIPTION__"
+      inputSchema:
+        type: object
+        properties:
+          query:
+            type: string
+            description: "Input query"
+        required: ["query"]
+  governance:
+    approval: {required: true, requiredApprovals: 1}
+    dataClassification: internal
+    owner: "REPLACE_WITH_YOUR_TEAM_NAME"
+  access:
+    # CRITICAL: the `unless { context has toolName && ![...].contains(...) }`
+    # clause gates per-tool access. Without it, this route admits EVERY tool on
+    # the shared AgentCore Gateway — not just the tools declared in
+    # agentCoreGateway.tools above. The toolName list must match the
+    # agentCoreGateway.tools[].name declarations, prefixed with
+    # "<metadata.name>___" (the Gateway's target alias). Tool names on the wire
+    # are `<cr-name>___<tool>`. Update both lists together when adding tools.
+    # Removing this clause opens your route to foreign tools. See Module 10.
+    cedarPolicy: |
+      permit(
+        principal,
+        action == Action::"invoke",
+        resource
+      ) unless {
+        context has toolName && !["__TOOL_ALIAS__-agentcore_____TOOL_ALIAS__"].contains(context.toolName)
+      } unless {
+        resource has dataClassification &&
+        resource.dataClassification == "restricted"
+      };
+# AGENTCORE-GATEWAY-YAML-END
+#
+# This variant declares a Lambda tool on your account's AgentCore Gateway.
+# new-tool.sh --agentcore-gateway --lambda <function-name> fills in
+# ${MODAAS_GATEWAY_ID}, ${REGION}, ${ACCOUNT_ID} from your shell and the
+# function name you pass, then validates it server-side like the default.

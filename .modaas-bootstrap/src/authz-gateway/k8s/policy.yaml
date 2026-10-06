@@ -1,0 +1,29 @@
+# Companion to deployment.yaml. Split into its own file rather than appended
+# there because deployment.yaml was mid-flight in a separate commit pass when
+# this was reconstructed (2026-08-24) — same modaas-system co-location rule
+# applies (targetRefs requires same-namespace as the Service it targets), so
+# this stays with the modaas-authz unit rather than moving to
+# deploy/agentgateway/ alongside agentgatewaypolicy-authz-hook.yaml.
+#
+# Reconstructed from live modaas-v3 cluster state: this policy was applied
+# ad-hoc during AI-DLC construction/authz-gateway validation and had no
+# committed manifest, so a `make install` reset would have silently dropped
+# it. Bounds how long agentgateway waits on the ext_authz hook before the
+# hook's own FailClosed timeout takes over — kept under authz-gateway's own
+# REQUEST_BUDGET_S (1.75s, see deployment.yaml) so the backend's deadline
+# fires first and can attach a reason (RL-7).
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: modaas-authz-timeout
+  namespace: modaas-system
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: modaas-authz
+  backend:
+    http:
+      requestTimeout: 1900ms
+    tcp:
+      connectTimeout: 200ms
