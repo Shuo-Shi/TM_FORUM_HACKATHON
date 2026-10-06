@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+# setup-digital-twin.sh — stand up the MAVERIC RADP digital twin on this
+# instance and train the RF model on the bundled Tokyo dataset.
+#
+# Runs on the workshop IDE instance (docker + compose are pre-installed by
+# the code-editor stack). CPU-only by design: RADP's default compose path has
+# no CUDA dependency, and our participant role is scoped to the APIs the labs
+# call — it cannot create a VPC or launch EC2, so there is no participant-owned
+# host for a GPU even if quota allowed one.
+#
+# For contrast, AWS's "AI Native Networks Immersion Day" workshop
+# (508f04dc-026a-4260-ac15-c6f011d50cf9) runs the SAME RADP on a participant-
+# launched g5.2xlarge Deep Learning AMI instance in its own VPC, using RADP's
+# CUDA path (`docker build -f radp/Dockerfile-cuda` plus a `dc-cuda.yml`
+# overlay). It can do that because it grants participants
+# AdministratorAccess. That also disproves an earlier claim in this file and in
+# the module, that GPU families are blocked platform-wide in vended accounts —
+# they are not; we simply do not grant the access needed to use one.
+#
+# Attribution: MAVERIC / RIC Algorithm Development Platform (RADP) is an
+# LF Connectivity project (MIT license, Meta Platforms and affiliates).
+# https://github.com/lf-connectivity/maveric
+set -euo pipefail
+
+TWIN_DIR="${TWIN_DIR:-$HOME/environment/maveric}"
+MODEL_ID="${MODEL_ID:-tokyo-rf-twin}"
+# RADP's dc-prod.yml publishes api_manager on host 8080, which the Code Editor
+# itself already holds (node, 127.0.0.1:8080). Docker's userland proxy binds
+# 0.0.0.0:8080, and 0.0.0.0 includes 127.0.0.1, so the container fails with
+# "bind: address already in use" and api_manager never starts — the one service
+# the RADP client talks to. Measured live 2026-09-25 on the IDE: ports 22, 80,
+# 8080, 8081, 9000 (cockpit), 9094 (kafka) were in use; 8090 was free.
+RADP_PORT="${RADP_PORT:-8090}"
+
+step() { printf '\n\033[1m── %s ──\033[0m\n' "$1"; }
+
+step "0/5 buildx version gate"
+# compose v2.30+ delegates `compose build` to buildx bake and hard-requires
+# buildx >=0.17.0. dnf's docker package ships a frozen buildx 0.12.x, and IDE
+# instances provisioned before the 2026-09-22 CFT fix still carry it — the
+# build then dies immediately with "compose build requires buildx 0.17.0 or
+# later" (reported live, Module 9). Self-heal: install a pinned buildx into
+# the USER plugin dir (~/.docker/cli-plugins precedes every system dir in the
+# docker CLI plugin search order; no root needed).
+BUILDX_MIN="0.17.0"
+BUILDX_PIN="v0.37.1"   # verified release, 2026-09-11
+have=$(docker buildx version 2>/dev/null | sed -n 's/.*v\([0-9][0-9.]*\).*/\1/p' | head -1)
+if [ -z "$have" ] || [ "$(printf '%s\n%s\n' "$BUILDX_MIN" "$have" | sort -V | head -1)" != "$BUILDX_MIN" ]; then
+  echo "buildx ${have:-absent} < $BUILDX_MIN — installing $BUILDX_PIN to ~/.docker/cli-plugins"
+  arch=$(uname -m); case "$arch" in x86_64) barch=amd64;; aarch64|arm64) barch=arm64;; *) echo "unsupported arch $arch"; exit 1;; esac
+  mkdir -p "$HOME/.docker/cli-plugins"
+  curl -fsSL "https://github.com/docker/buildx/releases/download/$BUILDX_PIN/buildx-$BUILDX_PIN.linux-$barch" \
+    -o "$HOME/.docker/cli-plugins/docker-buildx"
+  chmod +x "$HOME/.docker/cli-plugins/docker-buildx"
+fi
+docker buildx version
+
+step "1/5 clone MAVERIC (RADP)"
+if [ ! -d "$TWIN_DIR/.git" ]; then
+  git clone --depth 1 https://github.com/lf-connectivity/maveric "$TWIN_DIR"
+  cd "$TWIN_DIR"
+  git fetch --depth 1 origin 7573f030523669eaa3bb215fb3b29985c06824c8
+  git checkout 7573f030523669eaa3bb215fb3b29985c06824c8
+else
+  cd "$TWIN_DIR"
+fi
+
+step "1b/5 remap api_manager off port 8080 (the Code Editor owns it)"
+# A port already in use is only a conflict when something OTHER than this
+# twin holds it. On a re-run, our own api_manager container holds it, and
+# `compose up -d` below is idempotent, so exiting would make the script
+# impossible to re-run (measured live 2026-09-25: the second run exited here).
+# Compose labels every container with its project's working directory.
+if ss -ltn 2>/dev/null | grep -q ":${RADP_PORT} "; then
+  holder=$(docker ps --filter "publish=${RADP_PORT}" \
+    --format '{{.Label "com.docker.compose.project.working_dir"}}' 2>/dev/null | head -1)
+  if [ -n "$holder" ] && { [ "$holder" = "$(pwd)" ] || [ "$holder" = "$(pwd -P)" ]; }; then
+    echo "  :${RADP_PORT} is held by this twin's own api_manager (re-run) — continuing"
+  else
+    echo "port $RADP_PORT is already in use by something other than this twin:" >&2
+    ss -ltnp 2>/dev/null | grep ":${RADP_PORT} " >&2 || true
+    echo "re-run with RADP_PORT=<free port>" >&2
+    exit 1
+  fi
+fi
+# A compose overlay rather than an edit to dc-prod.yml: the clone stays pristine,
+# so `git pull` in TWIN_DIR never conflicts.
+cat > dc-workshop.yml <<YAML
+# Generated by setup-digital-twin.sh — do not edit.
+# Publishes api_manager on \$RADP_PORT instead of 8080, which the Code Editor holds.
+services:
+  api_manager:
+    ports: !override
+      - "${RADP_PORT}:5000"
+YAML
+# The client reads RADP_SERVICE_IP/PORT from the environment (radp/client/client.py
+# defaults the port to 8080), and .env-prod hardcodes 8080. Write .env before
+# compose starts so both sides agree.
+cp .env-prod .env 2>/dev/null || true
+if grep -q '^RADP_SERVICE_PORT=' .env 2>/dev/null; then
+  sed -i "s|^RADP_SERVICE_PORT=.*|RADP_SERVICE_PORT=${RADP_PORT}|" .env
+else
+  printf 'RADP_SERVICE_PORT=%s\n' "$RADP_PORT" >> .env
+fi
+export RADP_SERVICE_PORT="$RADP_PORT"
+echo "  api_manager -> host :${RADP_PORT}"
+
+COMPOSE="docker compose -f dc.yml -f dc-prod.yml -f dc-workshop.yml"
+
+step "2/5 build + start RADP services (first run downloads images; ~5 min)"
+docker build -t radp radp
+$COMPOSE up -d --build
+# Wait on the api_manager HTTP port, which is the condition that actually
+# matters. The previous version polled a `radp-init` service for the string
+# "Successfully created" — there is no such service in dc.yml (zookeeper, kafka,
+# api_manager, orchestration, training, rf_prediction, ue_tracks_generation),
+# so with `2>/dev/null` swallowing the error it burned the full 30x10s = 300s
+# on every run and then continued regardless. Measured live 2026-09-25.
+printf '  waiting for api_manager on :%s ' "$RADP_PORT"
+ready=""
+for _ in $(seq 1 60); do
+  if curl -fsS -o /dev/null "http://127.0.0.1:${RADP_PORT}/" 2>/dev/null \
+     || curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${RADP_PORT}/" 2>/dev/null | grep -qE '^[2-5]'; then
+    ready=1; break
+  fi
+  printf '.'; sleep 5
+done
+echo
+if [ -z "$ready" ]; then
+  echo "api_manager did not answer on :${RADP_PORT} within 5 minutes" >&2
+  $COMPOSE ps
+  $COMPOSE logs --tail 40 api_manager
+  exit 1
+fi
+echo "  ✓ api_manager answering"
+$COMPOSE ps --format '{{.Name}} {{.Status}}' | sed 's/^/  /'
+
+step "3/5 python client (RADP requires >=3.8,<3.11 — AL2023 default python3 qualifies)"
+PY=python3
+$PY - <<'EOF'
+import sys
+v = sys.version_info
+assert (3,8) <= (v.major, v.minor) < (3,11), f"python {v.major}.{v.minor} outside RADP's supported range"
+print(f"  python {v.major}.{v.minor} ok")
+EOF
+$PY -m venv .venv
+source .venv/bin/activate
+pip install -q --upgrade pip
+pip install -q -r radp/client/requirements.txt
+pip install -q -r apps/requirements.txt
+# .env was written in step 1b with the remapped RADP_SERVICE_PORT — copying
+# .env-prod again here would put the colliding 8080 back.
+
+step "4/5 train the RF digital twin on the Tokyo dataset (3 cells, Shinjuku)"
+$PY - "$MODEL_ID" <<'EOF'
+# API verified against apps/example/example_app.py at HEAD (imports, train
+# kwargs, resolve_model_status params incl. job_id from the train response).
+import sys
+import pandas as pd
+sys.path.insert(0, ".")
+from radp.client.client import RADPClient          # noqa: E402
+from radp.client.helper import ModelStatus, RADPHelper  # noqa: E402
+
+model_id = sys.argv[1]
+client = RADPClient()
+helper = RADPHelper(client)
+
+train_response = client.train(
+    model_id=model_id,
+    params={},
+    ue_training_data=pd.read_csv("apps/example/data/ue_training_data.csv"),
+    topology=pd.read_csv("apps/example/data/topology.csv"),
+)
+print(f"  training '{model_id}' submitted; polling…")
+status: ModelStatus = helper.resolve_model_status(
+    model_id=train_response["model_id"],
+    wait_interval=10,
+    max_attempts=60,
+    verbose=False,
+    job_id=train_response["job_id"],
+)
+assert status.success, "training failed — check `docker compose logs training`"
+print(f"  ✓ model '{model_id}' trained")
+EOF
+
+step "5/5 twin ready"
+mkdir -p ~/evidence
+cat <<EOF
+  Trained model id : $MODEL_ID
+  Evidence dir     : ~/evidence (created)
+  Next             : run a simulation + RF prediction (see the module page),
+                     or the CCO example:  $PY apps/coverage_capacity_optimization/cco_example_app.py
+  Stop the twin    : cd $TWIN_DIR && $COMPOSE down
+EOF
